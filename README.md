@@ -11,6 +11,12 @@ To install Xenith.JS, use npm:
 npm install xenith
 ```
 
+OR
+
+```bash
+git clone https://github.com/LeafDevs/XenithJS
+```
+
 ## Usage
 
 ```javascript
