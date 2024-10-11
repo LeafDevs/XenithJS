@@ -1,7 +1,7 @@
 module.exports = {
-    path: '/',
+    path: '/test',
     method: 'GET',
     execute: (req, res) => {
-        res.send('test');
+        res.send('Hello World');
     }
 }
