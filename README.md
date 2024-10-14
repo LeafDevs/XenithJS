@@ -51,11 +51,6 @@ Registers all endpoints defined in TypeScript files within the specified folder.
 ### `listen(port: number, callback?: () => void): void`
 Starts the server and listens for incoming requests on the specified port. Optionally accepts a callback function that is executed once the server starts listening.
 
-# End Generation Here
-
-
-
-
 ## License
 
 This project is licensed under the ISC License. See the [LICENSE](LICENSE) file for details.
