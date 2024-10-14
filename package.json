@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "mariadb": "^3.3.2",
     "xenith": "^1.0.3"
   },
   "devDependencies": {
