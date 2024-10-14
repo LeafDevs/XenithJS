@@ -1,22 +1,25 @@
 import { IncomingMessage, ServerResponse } from "http";
 import http from 'http';
-
+import crypto from 'crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-const endpoints = new Map<string, Endpoint>();
-
+import { decryptMessage, encryptMessage, privateKey } from "../crypto";
+const endpoints: Endpoint[] = [];
 
 class Endpoint {
     constructor(public path: string, public method: string, public handler: (req: Request, res: CustomResponse) => void) {
-        endpoints.set(path, this);
+        this.register();
     }
 
-    static get(path: string): Endpoint | undefined {
-        return endpoints.get(path);
+    register(): void {
+        endpoints.push(this);
     }
 
+    static get(path: string, method: string): Endpoint | undefined {
+        return endpoints.find(endpoint => endpoint.path === path && endpoint.method === method);
+    }
     static getAll(): Endpoint[] {
-        return Array.from(endpoints.values());
+        return endpoints;
     }
 }
 
@@ -26,8 +29,6 @@ class EndpointManager {
     }
 
     registerInPath(folder: string): void {
-        
-
         const files = fs.readdirSync(folder).filter(file => file.endsWith('.ts'));
         files.forEach(file => {
             const fullPath = path.join(folder, file);
@@ -47,7 +48,7 @@ class EndpointManager {
     }
 
     register(endpoint: Endpoint): void {
-        endpoints.set(endpoint.path, endpoint);
+        endpoint.register();
     }
 
     GET(path: string, callback: (req: Request, res: CustomResponse) => void): Endpoint | undefined {
@@ -68,32 +69,58 @@ class EndpointManager {
         return newEndpoint;
     }
 
-    handleRequest(req: Request, res: CustomResponse): void {
-        const endpoint = endpoints.get(req.url);
+    handleRequest(req: IncomingMessage, res: CustomResponse): void {
+        const endpoint = Endpoint.get(req.url as string, req.method as string);
         if (endpoint) {
-            endpoint.handler(req, res);
+            if (req.method === 'POST') {
+                let body = '';
+                req.on('data', (chunk: Buffer) => {
+                    body += chunk.toString();
+                });
+                req.on('end', () => {
+                    body = Data.encrypt(new Data(body));
+                    const requestWithBody = { ...req, body };
+                    endpoint.handler(requestWithBody as unknown as Request, res);
+                });
+            } else {
+                endpoint.handler(req as unknown as Request, res);
+            }
         } else {
             res.send('Not Found');
         }
     }
 
-    listen(port: number): void {
-        http.createServer((req: IncomingMessage, res: ServerResponse) => {
+    listen(port: number, callback?: () => void): void {
+        const server = http.createServer((req: IncomingMessage, res: ServerResponse) => {
             const customResponse = new CustomResponse(res);
-            this.handleRequest(req as unknown as Request, customResponse);
-        }).listen(port);
-        console.log(`
+            this.handleRequest(req, customResponse);
+        });
+
+        server.on('request', (req, res) => {
+            res.setHeader("Content-Security-Policy", "default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;");
+            res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+            res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            res.setHeader("Access-Control-Allow-Credentials", "true");
+        });
+        
+        server.listen(port, () => {
+            console.log(`
                 Powered By XenithJS
                 Version 1.0.2
                 https://lesbians.monster/xenithjs
-            `)
-        console.log(`Server listening on port http://localhost:${port}`);
+            `);
+            if (callback) {
+                callback();
+            } else {
+                console.log(`Server listening on port http://localhost:${port}`);
+            }
+        });
     }
 }
 
 class Data {
     constructor(public json: {}) {
-        var json = this.json;
     }
 
     get(key: string): any {
@@ -119,9 +146,21 @@ class Data {
     static fromBase64(base64: string): Data {
         return Data.fromJSON(Buffer.from(base64, 'base64').toString());
     }
+
+    static hash(data: Data): string {
+        return crypto.createHash('sha256').update(data.toJSON()).digest('hex');
+    }
+
+    static encrypt(data: Data): string {
+        return encryptMessage(data.toJSON(), privateKey.publicKey.toHex());
+    }
+
+    static decrypt(data: Data): string {
+        return decryptMessage(data.toJSON(), privateKey);
+    }
 }
 
-class Cookie {
+class Cookie { // Define data for cookie.
     constructor(
         public name: string,
         public value: string,
@@ -204,17 +243,39 @@ class CustomResponse {
     constructor(private serverResponse: ServerResponse) {}
 
     send(data: string): void {
-        this.serverResponse.writeHead(200, { 'Content-Type': 'text/plain' });
+        this.serverResponse.writeHead(200, { 
+            'Content-Type': 'text/plain',
+            'Content-Security-Policy': "default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;",
+            'Access-Control-Allow-Origin': '*'
+        });
         this.serverResponse.end(data);
     }
 
-    sendFile(data: string): void {
-        this.serverResponse.writeHead(200, { 'Content-Type': 'text/html' });
-        this.serverResponse.end(data);
+    html(filePath: string): void {
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                console.error('Error reading file:', err);
+                this.serverResponse.writeHead(500, { 'Content-Type': 'text/plain' });
+                this.serverResponse.end('Internal Server Error');
+                return;
+            }
+
+            this.serverResponse.writeHead(200, { 
+                'Content-Type': 'text/html',
+                'Content-Security-Policy': "default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;",
+                'Access-Control-Allow-Origin': '*'
+            });
+            
+            this.serverResponse.end(data);
+        });
     }
 
     json(data: any): void {
-        this.serverResponse.writeHead(200, { 'Content-Type': 'application/json' });
+        this.serverResponse.writeHead(200, { 
+            'Content-Type': 'application/json',
+            'Content-Security-Policy': "default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;",
+            'Access-Control-Allow-Origin': '*'
+        });
         this.serverResponse.end(JSON.stringify(data));
     }
 }
