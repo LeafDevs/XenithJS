@@ -86,7 +86,7 @@ class EndpointManager {
                 endpoint.handler(req as unknown as Request, res);
             }
         } else {
-            res.send('Not Found');
+            res.html(__dirname + '/404.html');
         }
     }
 
