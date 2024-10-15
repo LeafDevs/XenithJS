@@ -3,62 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Onboarding Page</title>
+    <title>Leaf's Job Portal API</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            background-color: #f0f4f8;
             color: #333;
         }
         header {
-            background: #007bff;
+            background: #0056b3;
             color: #fff;
-            padding: 20px;
+            padding: 30px;
             text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
         .container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 30px;
             background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
         h1 {
             margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #0056b3;
+            margin-bottom: 15px;
+            font-size: 1.8em;
         }
         section {
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         .feature {
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            background: #f9f9f9;
         }
         .feature i {
-            font-size: 24px;
-            margin-right: 10px;
-            color: #007bff;
+            font-size: 28px;
+            margin-right: 15px;
+            color: #0056b3;
         }
         footer {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 30px;
             font-size: 0.9em;
             color: #777;
+        }
+
+        .api-endpoints {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .api-endpoints li {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 20px;
+            transition: background 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .api-endpoints li:hover {
+            background: #e9ecef;
+        }
+        .endpoint-method {
+            font-weight: 600;
+            background-color: #0056b3;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 1.1em;
+        }
+        .endpoint-route {
+            font-size: 1.1em;
+            color: #010101;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>Welcome to the API</h1>
+        <h1>Leaf's Job Portal API</h1>
     </header>
     <div class="container">
         <section>
             <h2>Introduction</h2>
-            <p>This API allows for you to integrate your website with the services with ease.</p>
+            <p>This API allows you to integrate your website with our services seamlessly.</p>
         </section>
         <section>
             <h2>Key Features</h2>
@@ -80,9 +124,59 @@
                 <i class="fas fa-chart-line"></i>
                 <div>
                     <h3>Real-time Data</h3>
-                    <p>Get up to date data from our services.</p>
+                    <p>Get up-to-date data from our services.</p>
                 </div>
             </div>
+        </section>
+        <section>
+        <h2>API Endpoints</h2>
+        <ul class="api-endpoints">
+            <li class="endpoint">
+                <strong class="endpoint-method">POST</strong>
+                <strong class="endpoint-route">/register</strong>
+                <p class="endpoint-description">This endpoint allows users to register by providing their email and password. The data is encrypted for security.</p>
+            </li>
+            <li class="endpoint">
+                <strong class="endpoint-method">GET</strong>
+                <strong class="endpoint-route">/</strong>
+                <p class="endpoint-description">This is the main entry point of the API, providing an overview and access to the API documentation.</p>
+            </li>
+            <li class="endpoint">
+                <strong class="endpoint-method">POST</strong>
+                <strong class="endpoint-route">/auth</strong>
+                <p class="endpoint-description">This endpoint is used for user authentication, requiring email and password to obtain a session token.</p>
+            </li>
+            <li class="endpoint">
+                <strong class="endpoint-method">GET</strong>
+                <strong class="endpoint-route">/jobs</strong>
+                <p class="endpoint-description">This endpoint allows users to view available jobs.</p>
+            </li>
+            <li class="endpoint">
+                <strong class="endpoint-method">GET</strong>
+                <strong class="endpoint-route">/jobs/:id</strong>
+                <p class="endpoint-description">This endpoint allows users to view a specific job by ID.</p>
+            </li>
+            <li class="endpoint">
+                <strong class="endpoint-method">POST</strong>
+                <strong class="endpoint-route">/users/:user</strong>
+                <p class="endpoint-description">Displays the user's information excluding their password and personal information.</p>
+            </li>
+            <li class="endpoint">
+                <strong class="endpoint-method">GET</strong>
+                <strong class="endpoint-route">/users/:user/jobs</strong>
+                <p class="endpoint-description">Displays the jobs that the user has applied to.</p>
+            </li>
+            <li class="endpoint">
+                <strong class="endpoint-method">GET</strong>
+                <strong class="endpoint-route">/users/:user/jobs/:job</strong>
+                <p class="endpoint-description">Displays the job application status of the user.</p>
+            </li>
+            <li class="endpoint">
+                <strong class="endpoint-method">POST</strong>
+                <strong class="endpoint-route">/applications</strong>
+                <p class="endpoint-description">Displays all the applications.</p>
+            </li>
+        </ul>
         </section>
     </div>
     <footer>

@@ -1,5 +1,7 @@
+const SQL = require('./SQL');
+
 const isTokenValid = (token: string): boolean => {
-    return getConnection().then(connection => {
+    return SQL.getConnection().then(connection => {
         return connection.query('SELECT * FROM tokens WHERE token = ?', [token]);
     }).then(tokens => {
         return tokens.length > 0;
@@ -44,17 +46,20 @@ class User {
 }
 
 const isUserValid = (email: string, password: string): boolean => {
-    return getConnection().then(connection => {
-        return connection.query('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
+    return SQL.getConnection().then(connection => {
+        return connection.query('SELECT * FROM users WHERE email = "?" AND password = ?', [email, password]);
     }).then(users => {
         return users.length > 0;
     });
 }
 
 const getUser = (email: string): User => {
-    return getConnection().then(connection => {
+    return SQL.getConnection().then(connection => {
         return connection.query('SELECT * FROM users WHERE email = ?', [email]);
     }).then(users => {
+        if (users.length === 0) {
+            throw new Error('User not found');
+        }
         return new User(users[0].id, users[0].email, users[0].type, users[0].uniqueID);
     });
 }

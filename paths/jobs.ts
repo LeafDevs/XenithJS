@@ -5,7 +5,7 @@ module.exports = {
     method: 'GET',
     execute: (req, res) => {
         const token = req.headers['authorization']?.split(' ')[1];
-        if (token && isTokenValid(token)) {
+        if (token && TokenUtils.isTokenValid(token)) {
             getConnection().then(connection => {
                 return connection.query('SELECT * FROM jobs');
             }).then(jobs => {

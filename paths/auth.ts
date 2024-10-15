@@ -1,19 +1,32 @@
 const { Data } = require('xenith');
 const Xenith = require('xenith');
-
+const TokenUtils = require('./utils/Token');
 module.exports = {
     path: '/auth',
     method: 'POST',
-    execute: (req, res) => {
+    execute: async (req, res) => {
         const decrypted = Xenith.decryptMessage(req.body, Xenith.privateKey);
-        const data = eval('(' + decrypted + ')'); // Using eval to parse the string as JSON
-        console.log(data);
+        const regex = /"{\\"email\\":\\"(.*?)\\",\\"password\\":\\"(.*?)\\"}"/;
+        const matches = decrypted.match(regex);
+        let data = {
+            email: "",
+            password: ""
+        };
+        if (matches) {
+            data = {
+                email: matches[1],
+                password: matches[2]
+            };
+        } else {
+            console.error('No matches found in decrypted string');
+            res.json({code: 400, error: 'Internal Server Error' });
+        }
         if(!data.email || !data.password) {
             res.json({code: 400, error: 'Email and password are required' });
             return;
         }
-        if(isUserValid(data.email, data.password)) {
-            const user = getUser(data.email);
+        if(TokenUtils.isUserValid(data.email, data.password)) {
+            const user = await TokenUtils.getUser(data.email);
             const base = {
                 email: data.email,
                 type: user.getType(),
