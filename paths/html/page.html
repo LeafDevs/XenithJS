@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaf's Job Portal API</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('pre code').forEach((el) => {
+                hljs.highlightElement(el);
+            });
+        });
+    </script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -93,6 +102,45 @@
             color: #010101;
             margin-top: 5px;
         }
+
+        pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        strong {
+            background-color: #0056b3;
+            color: #fff;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            background-color: #0056b3;
+            margin: 20px 0;
+        }
+        details {
+            overflow: hidden;
+        }
+
+        details > summary {
+            cursor: pointer;
+        }
+
+        details > div {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        details[open] > div {
+            max-height: 1000px;
+            transition: max-height 0.3s ease-in;
+        }
+
     </style>
 </head>
 <body>
@@ -131,55 +179,91 @@
         <section>
         <h2>API Endpoints</h2>
         <ul class="api-endpoints">
-            <li class="endpoint">
-                <strong class="endpoint-method">POST</strong>
-                <strong class="endpoint-route">/register</strong>
-                <p class="endpoint-description">This endpoint allows users to register by providing their email and password. The data is encrypted for security.</p>
+            <li>
+                <span class="endpoint-method">GET</span>
+                <span class="endpoint-route">/jobs</span>
+                <p>Retrieves a list of available jobs.</p>
+                <details>
+                    <summary>Example Request/Response</summary>
+                    <div>
+                        <pre>
+POST /api/applications
+Authorization: Bearer YOUR_API_KEY
+
+Response:
+<code>
+{
+  "jobs": [
+    {
+      "id": 1,
+      "title": "Software Engineer",
+      "company": "TechCorp",
+      "location": "San Francisco, CA"
+    },
+    ...
+  ]
+}</code></pre>
+                    </div>
+                </details>
             </li>
-            <li class="endpoint">
-                <strong class="endpoint-method">GET</strong>
-                <strong class="endpoint-route">/</strong>
-                <p class="endpoint-description">This is the main entry point of the API, providing an overview and access to the API documentation.</p>
+            <li>
+                <span class="endpoint-method">POST</span>
+                <span class="endpoint-route">/users</span>
+                <p>Displays Information about the user if they applied to one of your applications</p>
+                <details>
+                    <summary>Example Request/Response</summary>
+                    <div>
+                        <pre>
+POST /api/applications
+Authorization: Bearer YOUR_API_KEY
+Content-Type: application/json
+<code>
+{
+  "jobId": 1,
+  "applicantName": "John Doe",
+  "email": "john@example.com",
+}
+
+Response:
+{
+  "success": true,
+  "applicationId": 12345
+}</code></pre>
+                    </div>
+                </details>
             </li>
-            <li class="endpoint">
-                <strong class="endpoint-method">POST</strong>
-                <strong class="endpoint-route">/auth</strong>
-                <p class="endpoint-description">This endpoint is used for user authentication, requiring email and password to obtain a session token.</p>
-            </li>
-            <li class="endpoint">
-                <strong class="endpoint-method">GET</strong>
-                <strong class="endpoint-route">/jobs</strong>
-                <p class="endpoint-description">This endpoint allows users to view available jobs.</p>
-            </li>
-            <li class="endpoint">
-                <strong class="endpoint-method">GET</strong>
-                <strong class="endpoint-route">/jobs/:id</strong>
-                <p class="endpoint-description">This endpoint allows users to view a specific job by ID.</p>
-            </li>
-            <li class="endpoint">
-                <strong class="endpoint-method">POST</strong>
-                <strong class="endpoint-route">/users/:user</strong>
-                <p class="endpoint-description">Displays the user's information excluding their password and personal information.</p>
-            </li>
-            <li class="endpoint">
-                <strong class="endpoint-method">GET</strong>
-                <strong class="endpoint-route">/users/:user/jobs</strong>
-                <p class="endpoint-description">Displays the jobs that the user has applied to.</p>
-            </li>
-            <li class="endpoint">
-                <strong class="endpoint-method">GET</strong>
-                <strong class="endpoint-route">/users/:user/jobs/:job</strong>
-                <p class="endpoint-description">Displays the job application status of the user.</p>
-            </li>
-            <li class="endpoint">
-                <strong class="endpoint-method">POST</strong>
-                <strong class="endpoint-route">/applications</strong>
-                <p class="endpoint-description">Displays all the applications.</p>
-            </li>
+            <li>
+                <span class="endpoint-method">GET</span>
+                <span class="endpoint-route">/applications</span>
+                <p>Retrieves jobs posted by an employer (requires employer authentication).</p>
+                <details>
+                    <summary>Example Request/Response</summary>
+                    <div>
+                        <pre>
+GET /api/employers/jobs
+Authorization: Bearer YOUR_EMPLOYER_API_KEY
+
+Response:
+<code>
+{
+  "jobs": [
+    {
+      "id": 1,
+      "title": "Senior Developer",
+      "applicants": 15,
+      "status": "active"
+    },
+    ...
+  ]
+}</code></pre>
+                    </div>
+                </details>
+
         </ul>
         </section>
     </div>
     <footer>
+        <p>Powered by XenithJS</p>
         <p>&copy; 2024 Leaf. All rights reserved.</p>
     </footer>
 </body>

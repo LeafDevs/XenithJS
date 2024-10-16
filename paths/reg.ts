@@ -1,10 +1,7 @@
-const SQL = require('./utils/SQL'); // Assuming SQL is exported as default
-const Xenith = require('xenith'); // Assuming Xenith is exported as default
-const TokenUtils = require('./utils/Token'); // Assuming TokenUtils is exported as default
-
 module.exports = {
     path: '/register',
     method: 'POST',
+    access: "NO_LIMIT",
     execute: (req, res) => {
         const decrypted = Xenith.decryptMessage(req.body, Xenith.privateKey);
         const regex = /"{\\"email\\":\\"(.*?)\\",\\"password\\":\\"(.*?)\\"}"/;

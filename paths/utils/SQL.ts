@@ -1,6 +1,6 @@
 import mariadb from 'mariadb';
 
-const pool = mariadb.createPool({
+let pool = mariadb.createPool({
     host: 'localhost', // replace with your host
     user: 'root', // replace with your database username
     password: 'root', // replace with your database password
@@ -51,7 +51,10 @@ const createTables = async () => {
         `);
         await conn.query(`
             CREATE TABLE IF NOT EXISTS tokens (
-                token VARCHAR(255) NOT NULL PRIMARY KEY
+                token VARCHAR(255) NOT NULL PRIMARY KEY,
+                user_id INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
             );
         `);
     } catch (err) {
@@ -63,14 +66,14 @@ const createTables = async () => {
 
 createTables();
 
-
-
 export const getConnection = async () => {
     let conn;
     try {
         conn = await pool.getConnection();
+        await conn.query('SELECT 1');
         return conn;
     } catch (err) {
-        throw new Error('Database connection error: ' + err);
+        console.error('Database connection error:', err);
+        throw new Error('Database connection error: ' + err.message);
     }
 };
