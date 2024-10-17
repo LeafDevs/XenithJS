@@ -4,5 +4,5 @@ bun.lockb
 
 package-lock.json
 package-lock.json
-paths/authcb.ts
-paths/googleauth.ts
+
+.env

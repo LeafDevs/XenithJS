@@ -3,8 +3,8 @@ const SQL = require('./utils/SQL');
 const { Data } = require('xenith');
 const TokenUtils = require('./utils/Token');
 
-const CLIENT_ID = "480857385164-8bp7rlerec8cco0snv3n1sud7g8v6uos.apps.googleusercontent.com";
-const CLIENT_SECRET = "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";
+const CLIENT_ID = process.env.google_client_id;
+const CLIENT_SECRET = process.env.google_client_secret;
 const REDIRECT_URI = 'http://localhost:3000/auth/google/callback';
 
 const oAuth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
