@@ -9,7 +9,7 @@ const isTokenValid = (token: string): boolean => {
 }
 
 class User {
-    constructor(public id: number, public email: string, public type: string, public uniqueID: string) {}
+    constructor(public id: number, public email: string, public type: string, public uniqueID: string, public name: string, public authed: string, public settings: any, public created_at: string, public token?: string) {}
 
     isAdmin(): boolean {
         return this.type === 'admin';
@@ -42,6 +42,31 @@ class User {
     getUniqueID(): string {
         return this.uniqueID;
     }
+    getToken(): string {
+        return this.token || this.asToken();
+    }
+
+    setToken(token: string): void {
+        this.token = token;
+    }
+
+    asToken(): string {
+        const crypto = require('crypto');
+        const token = crypto.randomBytes(32).toString('base64');
+        
+        this.token = token;
+        SQL.getConnection().then(connection => {
+            return connection.query('INSERT INTO tokens (token, user_id) VALUES (?, ?)', [token, this.id]);
+        }).catch(err => {
+            console.error('Error storing token:', err);
+        });
+        return token;
+    }
+
+    static generateToken(): string {
+        const crypto = require('crypto');
+        return crypto.randomBytes(32).toString('base64');
+    }
     
 }
 
@@ -60,11 +85,14 @@ const getUser = (email: string): User => {
         if (users.length === 0) {
             throw new Error('User not found');
         }
-        return new User(users[0].id, users[0].email, users[0].type, users[0].uniqueID);
+        const user = users[0];
+        return SQL.getConnection().then(connection => {
+            return connection.query('SELECT * FROM settings WHERE user_id = ?', [user.id]);
+        }).then(settings => {
+            return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, settings[0] || null, user.createdAt, user.token);
+        });
     });
 }
-
-
 
 module.exports = {
     isTokenValid,

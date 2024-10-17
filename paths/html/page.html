@@ -187,7 +187,7 @@
                     <summary>Example Request/Response</summary>
                     <div>
                         <pre>
-POST /api/applications
+POST /jobs
 Authorization: Bearer YOUR_API_KEY
 
 Response:
@@ -214,7 +214,7 @@ Response:
                     <summary>Example Request/Response</summary>
                     <div>
                         <pre>
-POST /api/applications
+POST /users
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 <code>
@@ -226,8 +226,12 @@ Content-Type: application/json
 
 Response:
 {
-  "success": true,
-  "applicationId": 12345
+    "resume": "https://example.com/resume.pdf",
+    "applicationId": 12345,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "1234567890",
+    "profilePicture": "https://example.com/profile.jpg"
 }</code></pre>
                     </div>
                 </details>
@@ -240,7 +244,7 @@ Response:
                     <summary>Example Request/Response</summary>
                     <div>
                         <pre>
-GET /api/employers/jobs
+GET /applications
 Authorization: Bearer YOUR_EMPLOYER_API_KEY
 
 Response:

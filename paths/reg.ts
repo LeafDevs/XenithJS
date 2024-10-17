@@ -3,9 +3,9 @@ module.exports = {
     method: 'POST',
     access: "NO_LIMIT",
     execute: (req, res) => {
-        const decrypted = Xenith.decryptMessage(req.body, Xenith.privateKey);
+        const decrypted = Xenith.decryptMessage(req.body, Xenith.privateKey); // decrypt the data
         const regex = /"{\\"email\\":\\"(.*?)\\",\\"password\\":\\"(.*?)\\"}"/;
-        const matches = decrypted.match(regex);
+        const matches = decrypted.match(regex); // match the data with the regex.
         let data = {
             email: "",
             password: ""
@@ -37,8 +37,4 @@ module.exports = {
             });
         }
     }
-}
-
-function generateUniqueID(): any {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }

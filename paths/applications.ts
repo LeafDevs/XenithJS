@@ -12,7 +12,7 @@ module.exports = {
             }).then(applications => {
                 res.json(applications);
             }).catch(err => {
-                res.status(500).json({ error: 'Database error', details: err });
+                res.json({code: 500, error: 'Database error', details: err });
             });
         } else {
             res.json({code: 401, error: 'Unauthorized' });

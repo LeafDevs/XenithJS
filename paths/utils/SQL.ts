@@ -1,17 +1,14 @@
 import mariadb from 'mariadb';
 
-let pool = mariadb.createPool({
-    host: 'localhost', // replace with your host
-    user: 'root', // replace with your database username
-    password: 'root', // replace with your database password
-    database: 'fbla', // replace with your database name
-    connectionLimit: 5
-});
-
 const createTables = async () => {
     let conn;
     try {
-        conn = await pool.getConnection();
+        conn = await mariadb.createConnection({
+            host: 'localhost', // replace with your host
+            user: 'root', // replace with your database username
+            password: 'root', // replace with your database password
+            database: 'fbla' // replace with your database name
+        });
         await conn.query(`
             CREATE TABLE IF NOT EXISTS jobs (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -20,8 +17,8 @@ const createTables = async () => {
                 location VARCHAR(255) NOT NULL,
                 description TEXT,
                 payrate DECIMAL(10, 2) NOT NULL,
-                tags JSON,
-                icon VARCHAR(255), -- Assuming icon is stored as a string (e.g., a URL or identifier)
+                tags TEXT,
+                icon VARCHAR(255),
                 requirements TEXT,
                 questions JSON,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -32,10 +29,15 @@ const createTables = async () => {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 email VARCHAR(255) NOT NULL UNIQUE,
                 password VARCHAR(255) NOT NULL,
+                name VARCHAR(255) NOT NULL,
                 authed ENUM('email', 'google') NOT NULL,
                 type ENUM('student', 'admin', 'employer', 'teacher') NOT NULL,
                 uniqueID VARCHAR(255) NOT NULL UNIQUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                private_token VARCHAR(255) NOT NULL UNIQUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                alerts BOOLEAN DEFAULT TRUE,
+                profile_visibility BOOLEAN DEFAULT TRUE,
+                profile_info JSON DEFAULT '{"profile_picture": "https://github.com/shadcn.png", "bio": "This is a sample bio", "social_links": {}}'
             );
         `);
         await conn.query(`
@@ -57,10 +59,18 @@ const createTables = async () => {
                 FOREIGN KEY (user_id) REFERENCES users(id)
             );
         `);
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS apikeys (
+                api_key VARCHAR(255) NOT NULL PRIMARY KEY,
+                user_id INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
+        `);
     } catch (err) {
         console.error('Error creating tables:', err);
     } finally {
-        if (conn) conn.release();
+        if (conn) conn.close();
     }
 };
 
@@ -69,8 +79,12 @@ createTables();
 export const getConnection = async () => {
     let conn;
     try {
-        conn = await pool.getConnection();
-        await conn.query('SELECT 1');
+        conn = await mariadb.createConnection({
+            host: 'localhost', // replace with your host
+            user: 'root', // replace with your database username
+            password: 'root', // replace with your database password
+            database: 'fbla' // replace with your database name
+        });
         return conn;
     } catch (err) {
         console.error('Database connection error:', err);
