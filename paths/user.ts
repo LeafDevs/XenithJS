@@ -7,7 +7,7 @@ module.exports = {
     access: "LIMIT",
     execute: async (req, res) => {
         const token = req.headers['authorization']?.split(' ')[1];
-        if (!token || !(await TokenUtils.isTokenValid(token))) {
+        if (!token) {
             return res.json({ code: 401, error: 'Unauthorized' });
         }
 

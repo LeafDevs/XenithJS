@@ -55,17 +55,7 @@ class User {
         const token = crypto.randomBytes(32).toString('base64');
         
         this.token = token;
-        SQL.getConnection().then(connection => {
-            return connection.query('INSERT INTO tokens (token, user_id) VALUES (?, ?)', [token, this.id]);
-        }).catch(err => {
-            console.error('Error storing token:', err);
-        });
         return token;
-    }
-
-    static generateToken(): string {
-        const crypto = require('crypto');
-        return crypto.randomBytes(32).toString('base64');
     }
     
 }
@@ -78,24 +68,27 @@ const isUserValid = (email: string, password: string): boolean => {
     });
 }
 
+const generateToken = (): string => {
+    const crypto = require('crypto');
+    return crypto.randomBytes(32).toString('base64');
+}
+
 const getUser = (email: string): User => {
     return SQL.getConnection().then(connection => {
-        return connection.query('SELECT * FROM users WHERE email = ?', [email]);
+        return connection.query('SELECT * FROM users WHERE private_token = ?', [email]);
     }).then(users => {
         if (users.length === 0) {
             throw new Error('User not found');
         }
         const user = users[0];
-        return SQL.getConnection().then(connection => {
-            return connection.query('SELECT * FROM settings WHERE user_id = ?', [user.id]);
-        }).then(settings => {
-            return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, settings[0] || null, user.createdAt, user.token);
-        });
+        return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.private_token);
     });
 }
 
 module.exports = {
     isTokenValid,
     isUserValid,
-    getUser
+    getUser,
+    generateToken,
+    User
 }

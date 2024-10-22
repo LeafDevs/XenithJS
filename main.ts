@@ -16,9 +16,11 @@ const loadApiKeys = async () => {
         const apiKeys = await connection.query('SELECT * FROM apikeys');
         let totalKeys = 0;
         for (const apiKey of apiKeys) {
+            console.log(apiKey);
             const key = new APIKey();
             key.setKey(apiKey.api_key);
             key.belongsTo(apiKey.user_id);
+            console.log(key);
             totalKeys++;
         }
         console.log(`Loaded ${totalKeys} API Keys from the database`);
@@ -27,8 +29,6 @@ const loadApiKeys = async () => {
         throw new Error('Error loading API Keys: ' + err.message);
     }
 };
-
-
 
 ep.listen(3000, ()=> {
     console.log('Started Server on http://localhost:3000');

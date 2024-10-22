@@ -52,19 +52,11 @@ const createTables = async () => {
             );
         `);
         await conn.query(`
-            CREATE TABLE IF NOT EXISTS tokens (
-                token VARCHAR(255) NOT NULL PRIMARY KEY,
-                user_id INT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
-            );
-        `);
-        await conn.query(`
             CREATE TABLE IF NOT EXISTS apikeys (
                 api_key VARCHAR(255) NOT NULL PRIMARY KEY,
-                user_id INT NOT NULL,
+                user_id VARCHAR(255) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                FOREIGN KEY (user_id) REFERENCES users(private_token)
             );
         `);
     } catch (err) {

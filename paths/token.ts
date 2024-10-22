@@ -1,8 +1,10 @@
+const { APIKey } = require('xenith');
+
 const SQL = require('./utils/SQL');
 const TokenUtils = require('./utils/Token');
 
 module.exports = {
-    path: '/get_user_token_and_finialize_register',
+    path: '/get_user_token_and_finalize_register', // Fixed spelling of 'finalize'
     method: 'GET',
     access: "NO_LIMIT",
     execute: async (req, res) => {
@@ -31,20 +33,24 @@ module.exports = {
                 user.created_at
             );
 
-            const token = tokenUser.asToken();
+            let token = tokenUser.getToken();
 
-            // Update user's token in the database
-            await connection.query('UPDATE users SET private_token = ? WHERE id = ?', [token, user.id]);
+            const [existingUser] = await connection.query('SELECT private_token FROM users WHERE email = ?', [email]);
+            if (existingUser.private_token) {
+                tokenUser.setToken(existingUser.private_token);
+            } else {
+                await connection.query('UPDATE users SET private_token = ? WHERE id = ?', [token, user.id]);
+            }
 
-            // Insert into settings table if not exists
-            await connection.query(
-                'INSERT INTO settings (user_id, alerts, profile_visibility, profile_info) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE user_id = user_id',
-                [user.id, true, true, JSON.stringify({profile_picture: "https://github.com/shadcn.png", bio: "This is a sample bio", social_links: {}}) ]
-            );
+            token = tokenUser.getToken();
+            const apiKey = new APIKey();
+            apiKey.belongsTo(token);
 
-            res.json({ code: 200, token });
+            await connection.query('INSERT INTO apikeys (api_key, user_id) VALUES (?, ?)', [apiKey.key, token]);
+
+            res.json({ code: 200, token, apiKey: apiKey.key });
         } catch (error) {
-            console.error('Error in get_user_token_and_finialize_register:', error);
+            console.error('Error in get_user_token_and_finalize_register:', error);
             res.json({ code: 500, error: 'Internal Server Error' });
         }
     }

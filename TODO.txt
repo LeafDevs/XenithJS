@@ -1,0 +1,4 @@
+Fix issues with the backend
+Fix stuff with registration
+Fix stuff with the website
+implement backend with the website.
