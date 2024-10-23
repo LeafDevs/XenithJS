@@ -18,7 +18,8 @@ module.exports = {
                 name: user.name,
                 type: user.type,
                 email: user.email,
-                uniqueID: user.uniqueID
+                uniqueID: user.uniqueID,
+                profile_info: user.profile_info
             });
         } catch (err) {
             console.error(err);

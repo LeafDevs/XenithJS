@@ -9,7 +9,7 @@ const isTokenValid = (token: string): boolean => {
 }
 
 class User {
-    constructor(public id: number, public email: string, public type: string, public uniqueID: string, public name: string, public authed: string, public settings: any, public created_at: string, public token?: string) {}
+    constructor(public id: number, public email: string, public type: string, public uniqueID: string, public name: string, public authed: string, public settings: any, public created_at: string, public token?: string, public profile_info?: any) {}
 
     isAdmin(): boolean {
         return this.type === 'admin';
@@ -81,7 +81,21 @@ const getUser = (email: string): User => {
             throw new Error('User not found');
         }
         const user = users[0];
-        return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.private_token);
+        return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.private_token, user.profile_info);
+    });
+}
+
+const updateProfilePicture = (token: string, image: string): Promise<string> => {
+    return SQL.getConnection().then(connection => {
+        return connection.query('SELECT * FROM users WHERE private_token = ?', [token]).then(users => {
+            if (users.length === 0) {
+                throw new Error('User not found');
+            }
+            const user = users[0];
+            const profileInfo = user.profile_info;
+            profileInfo.profile_picture = image;
+            return connection.query('UPDATE users SET profile_info = ? WHERE private_token = ?', [JSON.stringify(profileInfo), token]);
+        });
     });
 }
 
@@ -90,5 +104,6 @@ module.exports = {
     isUserValid,
     getUser,
     generateToken,
-    User
+    User,
+    updateProfilePicture
 }

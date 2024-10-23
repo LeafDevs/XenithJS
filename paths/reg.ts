@@ -1,3 +1,7 @@
+const Xenith = require('xenith');
+const SQL = require('./utils/SQL');
+const TokenUtils = require('./utils/Token');
+
 module.exports = {
     path: '/register',
     method: 'POST',
@@ -38,3 +42,5 @@ module.exports = {
         }
     }
 }
+
+

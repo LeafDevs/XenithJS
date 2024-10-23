@@ -43,11 +43,12 @@ const createTables = async () => {
         await conn.query(`
             CREATE TABLE IF NOT EXISTS applications (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
+                user_id VARCHAR(255) NOT NULL,
                 job_id INT NOT NULL,
                 status ENUM('applied', 'interview', 'offered', 'rejected', 'accepted') DEFAULT 'applied',
+                questions JSON NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (user_id) REFERENCES users(private_token),
                 FOREIGN KEY (job_id) REFERENCES jobs(id)
             );
         `);

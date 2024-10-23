@@ -26,7 +26,6 @@ module.exports = {
 
             const { email, name } = userInfo.data;
 
-            // Store user info in database 
             const connection = await SQL.getConnection();
             await connection.query('INSERT INTO users (email, name, password, authed, type, uniqueID, private_token) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email = ?', 
                 [email, name, Data.hash(email), 'google', 'student', generateUniqueID(), TokenUtils.generateToken(), email]);
@@ -44,7 +43,6 @@ module.exports = {
         }
     }
 };
-
 function generateUniqueID() {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }

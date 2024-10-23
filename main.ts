@@ -10,17 +10,17 @@ ep.set(options.encrypt, true);
 
 ep.set(options.rateLimit, 10);
 
+ep.IMAGES(__dirname + '/paths/uploads', "/uploads");
+
 const loadApiKeys = async () => {
     try {
         const connection = await SQL.getConnection();
         const apiKeys = await connection.query('SELECT * FROM apikeys');
         let totalKeys = 0;
         for (const apiKey of apiKeys) {
-            console.log(apiKey);
             const key = new APIKey();
             key.setKey(apiKey.api_key);
             key.belongsTo(apiKey.user_id);
-            console.log(key);
             totalKeys++;
         }
         console.log(`Loaded ${totalKeys} API Keys from the database`);
