@@ -1,23 +1,31 @@
-const SQL = require('./utils/SQL');
+const { getConnection } = require('./utils/SQL');
 
 module.exports = {
     path: '/jobs',
     method: 'GET',
     access: "NO_LIMIT",
-    execute: (req, res) => {
+    execute: async (req, res) => {
         const token = req.headers['authorization']?.split(' ')[1];
         if (token) {
-            SQL.getConnection().then(connection => {
-                return connection.query('SELECT * FROM jobs');
-            }).then(jobs => {
-                const formattedJobs = jobs.map(job => ({
-                    ...job,
-                    tags: JSON.parse(job.tags.replace(/'/g, '"')) // Parse the string to an array
-                }));
+            try {
+                const connection = await getConnection();
+                const jobs = await connection.all('SELECT * FROM jobs');
+                const formattedJobs = jobs.map(job => {
+                    const parsedTags = JSON.parse(job.tags.replace(/'/g, '"'));
+                    const parsedQuestions = JSON.parse(job.questions.replace(/'/g, '"'));
+                    return {
+                        ...job,
+                        tags: parsedTags,
+                        questions: parsedQuestions
+                    };
+                });
+                console.log('Number of formatted jobs:', formattedJobs.length);
                 res.json(formattedJobs);
-            }).catch(err => {
-                res.json({code: 500, error: 'Database error', details: err });
-            });
+            } catch (err) {
+                res.json({ code: 500, error: 'Database error', details: err });
+            }
+        } else {
+            res.json({ code: 401, error: 'Unauthorized' });
         }
     }
 }

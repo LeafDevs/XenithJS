@@ -1,7 +1,7 @@
 const { OAuth2Client } = require('google-auth-library');
-const SQL = require('./utils/SQL');
 const { Data } = require('xenith');
 const TokenUtils = require('./utils/Token');
+const SQL = require('./utils/SQL');
 
 const CLIENT_ID = process.env.google_client_id;
 const CLIENT_SECRET = process.env.google_client_secret;
@@ -27,7 +27,7 @@ module.exports = {
             const { email, name } = userInfo.data;
 
             const connection = await SQL.getConnection();
-            await connection.query('INSERT INTO users (email, name, password, authed, type, uniqueID, private_token) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email = ?', 
+            await connection.run('INSERT INTO users (email, name, password, authed, type, uniqueID, private_token) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(email) DO UPDATE SET email = ?', 
                 [email, name, Data.hash(email), 'google', 'student', generateUniqueID(), TokenUtils.generateToken(), email]);
 
             const response = await fetch('http://localhost:3000/get_user_token_and_finalize_register?email=' + encodeURIComponent(email));
@@ -43,6 +43,7 @@ module.exports = {
         }
     }
 };
+
 function generateUniqueID() {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }

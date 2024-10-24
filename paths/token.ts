@@ -1,6 +1,5 @@
 const { APIKey } = require('xenith');
-
-const SQL = require('./utils/SQL');
+const { getConnection } = require('./utils/SQL'); // Updated to use getConnection directly
 const TokenUtils = require('./utils/Token');
 
 module.exports = {
@@ -15,8 +14,8 @@ module.exports = {
         }
 
         try {
-            const connection = await SQL.getConnection();
-            const [user] = await connection.query('SELECT * FROM users WHERE email = ?', [email]);
+            const connection = await getConnection();
+            const user = await connection.get('SELECT * FROM users WHERE email = ?', [email]);
 
             if (!user) {
                 return res.json({ code: 404, error: 'User not found' });
@@ -35,18 +34,18 @@ module.exports = {
 
             let token = tokenUser.getToken();
 
-            const [existingUser] = await connection.query('SELECT private_token FROM users WHERE email = ?', [email]);
+            const existingUser = await connection.get('SELECT private_token FROM users WHERE email = ?', [email]);
             if (existingUser.private_token) {
                 tokenUser.setToken(existingUser.private_token);
             } else {
-                await connection.query('UPDATE users SET private_token = ? WHERE id = ?', [token, user.id]);
+                await connection.run('UPDATE users SET private_token = ? WHERE id = ?', [token, user.id]);
             }
 
             token = tokenUser.getToken();
             const apiKey = new APIKey();
             apiKey.belongsTo(token);
 
-            await connection.query('INSERT INTO apikeys (api_key, user_id) VALUES (?, ?)', [apiKey.key, token]);
+            await connection.run('INSERT INTO apikeys (api_key, user_id) VALUES (?, ?)', [apiKey.key, token]);
 
             res.json({ code: 200, token, apiKey: apiKey.key });
         } catch (error) {

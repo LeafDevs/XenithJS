@@ -19,7 +19,7 @@ module.exports = {
                 type: user.type,
                 email: user.email,
                 uniqueID: user.uniqueID,
-                profile_info: user.profile_info
+                profile_info: JSON.parse(user.profile_info)
             });
         } catch (err) {
             console.error(err);

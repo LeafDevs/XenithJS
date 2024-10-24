@@ -15,7 +15,6 @@ module.exports = {
         if (!image) {
             return res.json({ error: "Image is required." }, 400);
         }
-
         try {
             const uploadsDir = path.join(__dirname, 'uploads');
             if (!fs.existsSync(uploadsDir)) {
@@ -23,13 +22,12 @@ module.exports = {
             }
             
             const buffer = Buffer.from(image, 'base64');
-            const sharp = require('sharp'); // Assuming sharp is used for image processing
+            const sharp = require('sharp');
             const fileName = `${Date.now()}.webp`;
             const filePath = path.join(uploadsDir, fileName);
 
-            // Convert the image to webp format with compression
             await sharp(buffer)
-                .webp({ quality: 80 }) // Adjust quality as needed
+                .webp({ quality: 80 })
                 .toFile(filePath);
 
             await Token.updateProfilePicture(token, `http://localhost:3000/uploads/${fileName}`);

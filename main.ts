@@ -11,11 +11,10 @@ ep.set(options.encrypt, true);
 ep.set(options.rateLimit, 10);
 
 ep.IMAGES(__dirname + '/paths/uploads', "/uploads");
-
 const loadApiKeys = async () => {
     try {
-        const connection = await SQL.getConnection();
-        const apiKeys = await connection.query('SELECT * FROM apikeys');
+        const db = await SQL.getConnection();
+        const apiKeys = await db.all('SELECT * FROM apikeys');
         let totalKeys = 0;
         for (const apiKey of apiKeys) {
             const key = new APIKey();

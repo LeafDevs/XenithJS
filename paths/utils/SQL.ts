@@ -1,86 +1,88 @@
-import mariadb from 'mariadb';
+import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
 
-const createTables = async () => {
-    let conn;
-    try {
-        conn = await mariadb.createConnection({
-            host: 'localhost', // replace with your host
-            user: 'root', // replace with your database username
-            password: 'root', // replace with your database password
-            database: 'fbla' // replace with your database name
-        });
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS jobs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                company VARCHAR(255) NOT NULL,
-                location VARCHAR(255) NOT NULL,
-                description TEXT,
-                payrate DECIMAL(10, 2) NOT NULL,
-                tags TEXT,
-                icon VARCHAR(255),
-                requirements TEXT,
-                questions JSON,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                email VARCHAR(255) NOT NULL UNIQUE,
-                password VARCHAR(255) NOT NULL,
-                name VARCHAR(255) NOT NULL,
-                authed ENUM('email', 'google') NOT NULL,
-                type ENUM('student', 'admin', 'employer', 'teacher') NOT NULL,
-                uniqueID VARCHAR(255) NOT NULL UNIQUE,
-                private_token VARCHAR(255) NOT NULL UNIQUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                alerts BOOLEAN DEFAULT TRUE,
-                profile_visibility BOOLEAN DEFAULT TRUE,
-                profile_info JSON DEFAULT '{"profile_picture": "https://github.com/shadcn.png", "bio": "This is a sample bio", "social_links": {}}'
-            );
-        `);
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS applications (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id VARCHAR(255) NOT NULL,
-                job_id INT NOT NULL,
-                status ENUM('applied', 'interview', 'offered', 'rejected', 'accepted') DEFAULT 'applied',
-                questions JSON NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(private_token),
-                FOREIGN KEY (job_id) REFERENCES jobs(id)
-            );
-        `);
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS apikeys (
-                api_key VARCHAR(255) NOT NULL PRIMARY KEY,
-                user_id VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(private_token)
-            );
-        `);
-    } catch (err) {
-        console.error('Error creating tables:', err);
-    } finally {
-        if (conn) conn.close();
-    }
+const dbPromise = open({
+    filename: './fbla.db', // SQLite database file
+    driver: sqlite3.Database
+});
+
+const createOrUpdateTables = async () => {
+    const db = await dbPromise;
+
+    // Create or update jobs table
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS jobs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            company TEXT NOT NULL,
+            location TEXT NOT NULL,
+            description TEXT,
+            payrate REAL NOT NULL DEFAULT 0.00,
+            tags TEXT DEFAULT '',
+            icon TEXT DEFAULT '',
+            requirements TEXT DEFAULT '',
+            questions TEXT DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    `);
+    
+    // Create or update users table
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            name TEXT NOT NULL,
+            authed TEXT CHECK(authed IN ('email', 'google')) NOT NULL,
+            type TEXT CHECK(type IN ('student', 'admin', 'employer', 'teacher')) NOT NULL,
+            uniqueID TEXT NOT NULL UNIQUE,
+            private_token TEXT NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            alerts BOOLEAN DEFAULT TRUE,
+            profile_visibility BOOLEAN DEFAULT TRUE,
+            profile_info TEXT DEFAULT '{"profile_picture": "https://github.com/leafdevs.png", "bio": "This is a sample bio", "social_links": {}, "portfolio": "", "resume": ""}'
+        );
+    `);
+    
+    // Create or update applications table
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            job_id INTEGER NOT NULL,
+            status TEXT CHECK(status IN ('applied', 'interview', 'offered', 'rejected', 'accepted')) DEFAULT 'applied',
+            questions TEXT NOT NULL DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(private_token),
+            FOREIGN KEY (job_id) REFERENCES jobs(id)
+        );
+    `);
+    
+    // Create or update apikeys table
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS apikeys (
+            api_key TEXT NOT NULL PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(private_token)
+        );
+    `);
+    
+    // Create or update pending_posts table
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS pending_posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(private_token)
+        );
+    `);
 };
 
-createTables();
+createOrUpdateTables();
 
+// Export the database connection
 export const getConnection = async () => {
-    let conn;
-    try {
-        conn = await mariadb.createConnection({
-            host: 'localhost', // replace with your host
-            user: 'root', // replace with your database username
-            password: 'root', // replace with your database password
-            database: 'fbla' // replace with your database name
-        });
-        return conn;
-    } catch (err) {
-        console.error('Database connection error:', err);
-        throw new Error('Database connection error: ' + err.message);
-    }
+    return dbPromise;
 };

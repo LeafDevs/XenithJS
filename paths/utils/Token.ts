@@ -1,11 +1,9 @@
-const SQL = require('./SQL');
+import { getConnection } from './SQL';
 
-const isTokenValid = (token: string): boolean => {
-    return SQL.getConnection().then(connection => {
-        return connection.query('SELECT * FROM tokens WHERE token = ?', [token]);
-    }).then(tokens => {
-        return tokens.length > 0;
-    });
+const isTokenValid = async (token: string): Promise<boolean> => {
+    const connection = await getConnection();
+    const tokens = await connection.all('SELECT * FROM tokens WHERE token = ?', [token]);
+    return tokens.length > 0;
 }
 
 class User {
@@ -42,6 +40,7 @@ class User {
     getUniqueID(): string {
         return this.uniqueID;
     }
+    
     getToken(): string {
         return this.token || this.asToken();
     }
@@ -57,15 +56,12 @@ class User {
         this.token = token;
         return token;
     }
-    
 }
 
-const isUserValid = (email: string, password: string): boolean => {
-    return SQL.getConnection().then(connection => {
-        return connection.query('SELECT * FROM users WHERE email = "?" AND password = ?', [email, password]);
-    }).then(users => {
-        return users.length > 0;
-    });
+const isUserValid = async (email: string, password: string): Promise<boolean> => {
+    const connection = await getConnection();
+    const users = await connection.all('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
+    return users.length > 0;
 }
 
 const generateToken = (): string => {
@@ -73,33 +69,26 @@ const generateToken = (): string => {
     return crypto.randomBytes(32).toString('base64');
 }
 
-const getUser = (email: string): User => {
-    return SQL.getConnection().then(connection => {
-        return connection.query('SELECT * FROM users WHERE private_token = ?', [email]);
-    }).then(users => {
-        if (users.length === 0) {
-            throw new Error('User not found');
-        }
-        const user = users[0];
-        return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.private_token, user.profile_info);
-    });
+const getUser = async (email: string): Promise<User> => {
+    const connection = await getConnection();
+    const users = await connection.all('SELECT * FROM users WHERE private_token = ?', [email]);
+    if (users.length === 0) {
+        throw new Error('User not found');
+    }
+    const user = users[0];
+    return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.private_token, user.profile_info);
 }
 
-const updateProfilePicture = (token: string, image: string): Promise<string> => {
-    return SQL.getConnection().then(connection => {
-        return connection.query('SELECT * FROM users WHERE private_token = ?', [token]).then(users => {
-            if (users.length === 0) {
-                throw new Error('User not found');
-            }
-            const user = users[0];
-            const profileInfo = user.profile_info;
-            profileInfo.profile_picture = image;
-            return connection.query('UPDATE users SET profile_info = ? WHERE private_token = ?', [JSON.stringify(profileInfo), token]);
-        });
-    });
+const updateProfilePicture = async (token: string, image: string): Promise<string> => {
+    const connection = await getConnection();
+    const user = await getUser(token);
+    const profileInfo = user.profile_info ? JSON.parse(user.profile_info) : {};
+    profileInfo.profile_picture = image;
+    await connection.run('UPDATE users SET profile_info = ? WHERE private_token = ?', [JSON.stringify(profileInfo), token]);
+    return image;
 }
 
-module.exports = {
+export {
     isTokenValid,
     isUserValid,
     getUser,

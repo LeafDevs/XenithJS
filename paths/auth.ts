@@ -15,8 +15,8 @@ module.exports = {
         };
         if (matches) {
             data = {
-                email: matches[1],
-                password: matches[2]
+                email: matches.email,
+                password: matches.password
             };
         } else {
             console.error('No matches found in decrypted string');

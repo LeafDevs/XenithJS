@@ -12,8 +12,12 @@
   "dependencies": {
     "formidable": "^3.5.2",
     "google-auth-library": "^9.14.2",
+    "knex": "^3.1.0",
     "mariadb": "^3.3.2",
+    "mysql": "^2.18.1",
     "sharp": "^0.33.5",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
     "xenith": "^1.0.3"
   },
   "devDependencies": {
