@@ -58,10 +58,10 @@ class User {
     }
 }
 
-const isUserValid = async (email: string, password: string): Promise<boolean> => {
+const isUserValid = async (email: string): Promise<boolean> => {
     const connection = await getConnection();
-    const users = await connection.all('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
-    return users.length > 0;
+    const users = await connection.all('SELECT * FROM users WHERE email = ?', [email]);
+    return users.length > 0; // false
 }
 
 const generateToken = (): string => {

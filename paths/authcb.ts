@@ -41,6 +41,9 @@ module.exports = {
             console.error('Error processing Google OAuth:', error);
             res.json({ code: 500, error: 'Authentication failed' });
         }
+    },
+    generateUniqueID() {
+        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     }
 };
 
