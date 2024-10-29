@@ -22,6 +22,7 @@ const createOrUpdateTables = async () => {
             icon TEXT DEFAULT '',
             requirements TEXT DEFAULT '',
             questions TEXT DEFAULT '[]',
+            accepted TEXT DEFAULT 'false',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `);
@@ -62,7 +63,7 @@ const createOrUpdateTables = async () => {
     await db.exec(`
         CREATE TABLE IF NOT EXISTS apikeys (
             api_key TEXT NOT NULL PRIMARY KEY,
-            user_id TEXT NOT NULL,
+            user_id TEXT NOT NULL UNIQUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(private_token)
         );

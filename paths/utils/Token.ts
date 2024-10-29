@@ -79,6 +79,15 @@ const getUser = async (email: string): Promise<User> => {
     return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.private_token, user.profile_info);
 }
 
+const getToken = async (email: string): Promise<User> => {
+    const connection = await getConnection();
+    const users = await connection.all('SELECT * FROM users WHERE email = ?', [email]);
+    if (users.length === 0) {
+        throw new Error('User not found');
+    }
+    return users[0].private_token;
+}
+
 const updateProfilePicture = async (token: string, image: string): Promise<string> => {
     const connection = await getConnection();
     const user = await getUser(token);
@@ -88,11 +97,19 @@ const updateProfilePicture = async (token: string, image: string): Promise<strin
     return image;
 }
 
+const getPassword = async (email: string): Promise<string> => {
+    const connection = await getConnection();
+    const users = await connection.all('SELECT * FROM users WHERE email = ?', [email]);
+    return users[0].password;
+}
+
 export {
     isTokenValid,
-    isUserValid,
     getUser,
-    generateToken,
+    getToken,
+    updateProfilePicture,
+    getPassword,
     User,
-    updateProfilePicture
+    generateToken,
+    isUserValid
 }

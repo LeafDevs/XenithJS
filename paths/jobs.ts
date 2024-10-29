@@ -9,7 +9,7 @@ module.exports = {
         if (token) {
             try {
                 const connection = await getConnection();
-                const jobs = await connection.all('SELECT * FROM jobs');
+                const jobs = await connection.all('SELECT * FROM jobs WHERE accepted = "true"');
                 const formattedJobs = jobs.map(job => {
                     const parsedTags = JSON.parse(job.tags.replace(/'/g, '"'));
                     const parsedQuestions = JSON.parse(job.questions.replace(/'/g, '"'));
@@ -19,7 +19,6 @@ module.exports = {
                         questions: parsedQuestions
                     };
                 });
-                console.log('Number of formatted jobs:', formattedJobs.length);
                 res.json(formattedJobs);
             } catch (err) {
                 res.json({ code: 500, error: 'Database error', details: err });

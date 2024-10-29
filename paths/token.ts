@@ -42,12 +42,19 @@ module.exports = {
             }
 
             token = tokenUser.getToken();
-            const apiKey = new APIKey();
-            apiKey.belongsTo(token);
+            const existingApiKey = await connection.get('SELECT * FROM apikeys WHERE user_id = ?', [token]);
+            let apiKey;
 
-            await connection.run('INSERT INTO apikeys (api_key, user_id) VALUES (?, ?)', [apiKey.key, token]);
+            if (existingApiKey) {
+                apiKey = existingApiKey.api_key; // Return existing API key
+            } else {
+                apiKey = new APIKey();
+                apiKey.belongsTo(token);
+                await connection.run('INSERT INTO apikeys (api_key, user_id) VALUES (?, ?)', [apiKey.key, token]);
+                apiKey = apiKey.key; // Use the newly created API key
+            }
 
-            res.json({ code: 200, token, apiKey: apiKey.key });
+            res.json({ code: 200, token, apiKey });
         } catch (error) {
             console.error('Error in get_user_token_and_finalize_register:', error);
             res.json({ code: 500, error: 'Internal Server Error' });

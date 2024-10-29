@@ -4,7 +4,7 @@ const TokenUtils = require('./utils/Token');
 module.exports = {
     path: '/user',
     method: 'GET',
-    access: "LIMIT",
+    access: "NO_LIMIT",
     execute: async (req, res) => {
         const token = req.headers['authorization']?.split(' ')[1];
         if (!token) {

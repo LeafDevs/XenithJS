@@ -1,6 +1,7 @@
 const { getConnection } = require('./utils/SQL'); // Updated to use getConnection directly
 const TokenUtils = require('./utils/Token');
-const Xenith, { Data } = require('xenith');
+const Xenith = require('xenith');
+const { Data } = Xenith;
 const AuthCB = require('./authcb');
 
 module.exports = {
