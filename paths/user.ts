@@ -19,7 +19,8 @@ module.exports = {
                 type: user.type,
                 email: user.email,
                 uniqueID: user.uniqueID,
-                profile_info: JSON.parse(user.profile_info)
+                profile_info: JSON.parse(user.profile_info),
+                posting_id: user.posting_id
             });
         } catch (err) {
             console.error(err);

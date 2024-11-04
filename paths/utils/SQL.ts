@@ -41,7 +41,7 @@ const createOrUpdateTables = async () => {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             alerts BOOLEAN DEFAULT TRUE,
             profile_visibility BOOLEAN DEFAULT TRUE,
-            profile_info TEXT DEFAULT '{"profile_picture": "https://github.com/leafdevs.png", "bio": "This is a sample bio", "social_links": {}, "portfolio": "", "resume": ""}'
+            profile_info TEXT DEFAULT '{"profile_picture": "https://github.com/leafdevs.png", "bio": "This is a sample bio", "banner": "", "social_links": {}, "portfolio": "", "resume": ""}'
         );
     `);
     

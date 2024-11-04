@@ -7,7 +7,7 @@ const isTokenValid = async (token: string): Promise<boolean> => {
 }
 
 class User {
-    constructor(public id: number, public email: string, public type: string, public uniqueID: string, public name: string, public authed: string, public settings: any, public created_at: string, public token?: string, public profile_info?: any) {}
+    constructor(public id: number, public email: string, public type: string, public uniqueID: string, public name: string, public authed: string, public settings: any, public created_at: string, public token?: string, public profile_info?: any, public posting_id?: number) {}
 
     isAdmin(): boolean {
         return this.type === 'admin';
@@ -56,6 +56,10 @@ class User {
         this.token = token;
         return token;
     }
+
+    setPostingID(id: number) {
+        this.posting_id = id;
+    }
 }
 
 const isUserValid = async (email: string): Promise<boolean> => {
@@ -76,7 +80,7 @@ const getUser = async (email: string): Promise<User> => {
         throw new Error('User not found');
     }
     const user = users[0];
-    return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.private_token, user.profile_info);
+    return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.private_token, user.profile_info, user.posting_id || null);
 }
 
 const getToken = async (email: string): Promise<User> => {
@@ -97,10 +101,23 @@ const updateProfilePicture = async (token: string, image: string): Promise<strin
     return image;
 }
 
+const updateBanner = async (token: string, image: string): Promise<string> => {
+    const connection = await getConnection();
+    const user = await getUser(token);
+    const profileInfo = user.profile_info ? JSON.parse(user.profile_info) : {};
+    profileInfo.banner = image;
+    await connection.run('UPDATE users SET profile_info = ? WHERE private_token = ?', [JSON.stringify(profileInfo), token]);
+    return image;
+}
+
 const getPassword = async (email: string): Promise<string> => {
     const connection = await getConnection();
     const users = await connection.all('SELECT * FROM users WHERE email = ?', [email]);
     return users[0].password;
+}
+
+const isAdmin = async(token: string): Promise<Boolean> => {
+    return (await getUser(token)).type == 'admin';
 }
 
 export {
@@ -111,5 +128,7 @@ export {
     getPassword,
     User,
     generateToken,
-    isUserValid
+    isUserValid,
+    updateBanner,
+    isAdmin
 }
