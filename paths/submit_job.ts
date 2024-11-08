@@ -1,6 +1,8 @@
 const SQL = require("./utils/SQL");
 const Xenith = require("xenith");
 
+// i do not know what this is used for. i think i made it but never used it.
+
 module.exports = {
     path: "/jobs/submit",
     method: "POST",
@@ -14,8 +16,10 @@ module.exports = {
 
         try {
             const connection = await SQL.getConnection();
+            const questionsJSON = Array.isArray(questions) && questions.length > 0 ? JSON.stringify(questions) : '[]';
+            console.log(questionsJSON);
             await connection.run('INSERT INTO jobs (title, company, location, description, payrate, tags, icon, requirements, questions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-                [title, company, location, description || '', payrate, tags || '', icon || '', requirements || '', questions || '[]']);
+                [title, company, location, description || '', payrate, tags || '', icon || '', requirements || '', questionsJSON]);
             
             res.json({ code: 201, message: 'Job submitted successfully' });
         } catch (error) {
