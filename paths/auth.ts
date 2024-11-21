@@ -1,7 +1,7 @@
 const { Data } = require('xenith');
 const Xenith = require('xenith');
 const TokenUtils = require('./utils/Token');
-
+const bcrypt = require('bcrypt');
 module.exports = {
     path: '/auth',
     method: 'POST', 
@@ -15,9 +15,18 @@ module.exports = {
         if (TokenUtils.isUserValid(data.email, data.password)) {
             const token = await TokenUtils.getToken(data.email);
             const password = await TokenUtils.getPassword(data.email);
-            const pass = Data.hash(data.password);
-            if(password === pass) {
-                res.json({ code: 200, message: 'Authentication successful', token: token });
+            
+            console.log(bcrypt.hashSync("password", 10));
+            console.log(password);
+
+            console.log(await bcrypt.compare(data.password, password));
+
+            if (await bcrypt.compare(data.password, password)) {
+                if(data.password === "password") {
+                    res.json({code: 200, message: 'Authentication successful', temp: true });
+                } else {
+                    res.json({code: 200, message: 'Authentication successful', token: token });
+                }
             } else {
                 res.json({code: 401, error: 'Invalid email or password' });
             }

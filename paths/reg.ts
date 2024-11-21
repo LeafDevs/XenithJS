@@ -1,37 +1,59 @@
-const { getConnection } = require('./utils/SQL'); // Updated to use getConnection directly
-const TokenUtils = require('./utils/Token');
-const Xenith = require('xenith');
-const { Data } = Xenith;
-const AuthCB = require('./authcb');
+// Import required dependencies
+const { getConnection } = require('./utils/SQL'); // Database connection utility
+const TokenUtils = require('./utils/Token'); // User token management
+const Xenith = require('xenith'); // Core framework
+const { Data } = Xenith; // Data utilities from Xenith
+const AuthCB = require('./authcb'); // Authentication callbacks
+const bcrypt = require('bcrypt'); // Password hashing
 
 module.exports = {
-    path: '/register',
-    method: 'POST',
-    access: "NO_LIMIT",
+    path: '/register', // Route path for user registration
+    method: 'POST', // HTTP method
+    access: "NO_LIMIT", // No rate limiting on registration
     execute: async (req, res) => {
-        const decrypted = Xenith.decryptMessage(req.body.data, Xenith.privateKey); // decrypt the data
+        // Decrypt the request data using Xenith's private key
+        const decrypted = Xenith.decryptMessage(req.body.data, Xenith.privateKey);
         const data = JSON.parse(decrypted);
+
+        // Validate required fields
         if (!data.email || !data.password || !data.name) {
             return res.json({ code: 400, error: 'Email and password are required' });
         }
+
+        // Check if user already exists
         if (await TokenUtils.isUserValid(data.email)) {
             return res.json({ code: 400, error: 'User already exists' });
         } else {
             try {
+                // Create new user object with default student role
                 const user = new TokenUtils.User(
-                    null,
+                    null, // No ID yet - will be assigned by database
                     data.email,
-                    'student',
-                    AuthCB.generateUniqueID(),
+                    'student', // Default role
+                    AuthCB.generateUniqueID(), // Generate unique identifier
                     data.name,
-                    'email',
-                    null,
-                    null
+                    'email', // Authentication method
+                    null, // No additional data
+                    null  // No additional data
                 );
+
+                // Get database connection
                 const connection = await getConnection();
-                await connection.run('INSERT INTO users (email, name, password, authed, type, uniqueID, private_token) VALUES (?, ?, ?, ?, ?, ?, ?)', [data.email, data.name, Data.hash(data.password), 'email', 'student', AuthCB.generateUniqueID(), user.asToken()]);
+
+                // Hash the password with bcrypt (10 rounds)
+                const hashedPassword = await bcrypt.hash(data.password, 10);
+
+                // Insert new user into database
+                await connection.run(
+                    'INSERT INTO users (email, name, password, authed, type, uniqueID, private_token) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [data.email, data.name, hashedPassword, 'email', 'student', AuthCB.generateUniqueID(), user.asToken()]
+                );
+
+                // Return success response
                 res.json({ code: 200, message: 'Registration successful' });
+
             } catch (err) {
+                // Log error and return generic error message
                 console.error(err);
                 res.json({ code: 500, error: 'Internal Server Error' });
             }   

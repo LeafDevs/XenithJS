@@ -7,7 +7,17 @@ const isTokenValid = async (token: string): Promise<boolean> => {
 }
 
 class User {
-    constructor(public id: number, public email: string, public type: string, public uniqueID: string, public name: string, public authed: string, public settings: any, public created_at: string, public token?: string, public profile_info?: any, public posting_id?: number) {}
+    constructor(public id: number,
+                public email: string,
+                public type: string,
+                public uniqueID: string,
+                public name: string,
+                public authed: string,
+                public settings: any,
+                public created_at: string,
+                public token?: string,
+                public profile_info?: any,
+                public posting_id?: number) {}
 
     isAdmin(): boolean {
         return this.type === 'admin';
@@ -83,7 +93,7 @@ const getUser = async (email: string): Promise<User> => {
     return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.private_token, user.profile_info, user.posting_id || null);
 }
 
-const getToken = async (email: string): Promise<User> => {
+const getToken = async (email: string): Promise<string> => {
     const connection = await getConnection();
     const users = await connection.all('SELECT * FROM users WHERE email = ?', [email]);
     if (users.length === 0) {

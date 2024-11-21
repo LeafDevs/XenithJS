@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "rsync -avz --exclude='.git' --exclude='node_modules' --exclude='package-lock.json' --exclude='fbla.db' -e 'ssh -i ~/Downloads/key.pem' ./ ubuntu@ssh.lesbians.monster:/home/ubuntu/backend && ssh -i ~/Downloads/key.pem ubuntu@ssh.lesbians.monster 'pm2 restart 0'"
   },
   "keywords": [],
   "author": "",
@@ -20,7 +21,7 @@
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "table": "^6.8.2",
-    "xenith": "^1.0.3"
+    "xenith": "^1.0.7"
   },
   "devDependencies": {
     "@types/node": "^22.7.5"

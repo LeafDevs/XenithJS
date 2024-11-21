@@ -25,6 +25,7 @@ module.exports = {
                 const postingIds = JSON.parse(userDetails.posting_id);
 
                 // Get applications for all posting IDs
+                // Use parameterized queries
                 const applications = await connection.all(`
                     SELECT id, user_id, job_id, status, questions, created_at
                     FROM applications 

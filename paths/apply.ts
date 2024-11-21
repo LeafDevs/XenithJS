@@ -30,9 +30,10 @@ module.exports = {
         try {
             console.log('Attempting to insert application into database...');
             const connection = await SQL.getConnection();
+            const sanitizedAnswers = Array.isArray(answers) ? JSON.stringify(answers) : '[]';
             const result = await connection.run(
                 "INSERT INTO applications (user_id, job_id, status, questions) VALUES (?, ?, ?, ?)",
-                [token, jobId, "pending", JSON.stringify(answers)]
+                [token, jobId, "pending", sanitizedAnswers]
             );
 
             console.log('Application successfully inserted with ID:', result.lastID);

@@ -15,11 +15,18 @@ const loadApiKeys = async () => {
     try {
         const db = await SQL.getConnection();
         const apiKeys = await db.all('SELECT * FROM apikeys');
+        const userTokens = await db.all('SELECT * FROM users');
         let totalKeys = 0;
         for (const apiKey of apiKeys) {
             const key = new APIKey();
             key.setKey(apiKey.api_key);
             key.belongsTo(apiKey.user_id);
+            totalKeys++;
+        }
+        for (const userToken of userTokens) {
+            const key = new APIKey();
+            key.setKey(userToken.private_token);
+            key.belongsTo(userToken.id);
             totalKeys++;
         }
         console.log(`Loaded ${totalKeys} API Keys from the database`);
@@ -30,6 +37,6 @@ const loadApiKeys = async () => {
 };
 
 ep.listen(3000, ()=> {
-    console.log('Started Server on http://localhost:3000');
+    console.log('Started Server on https://api.lesbians.monster');
     setTimeout(loadApiKeys, 3000);
 });

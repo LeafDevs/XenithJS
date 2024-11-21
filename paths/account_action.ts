@@ -2,6 +2,7 @@ import { CustomResponse } from "xenith";
 import { getUser } from "./utils/Token";
 import { getConnection } from "./utils/SQL";
 import * as Xenith from "xenith";
+const bcrypt = require('bcrypt'); // Password hashing
 
 export default {
     path: '/admin/accounts/:id/:action',
@@ -34,7 +35,7 @@ export default {
                 case 'temp-password':
                     await connection.run(
                         'UPDATE users SET password = ? WHERE id = ?',
-                        [Xenith.Data.hash('password'), id]
+                        [await bcrypt.hash('password', 10), id]
                     );
                     break;
                 default:

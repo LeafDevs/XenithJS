@@ -6,7 +6,7 @@ const SQL = require('./utils/SQL');
 const CLIENT_ID = process.env.google_client_id;
 const CLIENT_SECRET = process.env.google_client_secret;
 
-const REDIRECT_URI = 'http://localhost:3000/auth/google/callback';
+const REDIRECT_URI = 'https://api.lesbians.monster/auth/google/callback';
 
 const oAuth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
@@ -30,10 +30,10 @@ module.exports = {
             await connection.run('INSERT INTO users (email, name, password, authed, type, uniqueID, private_token) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(email) DO UPDATE SET email = ?', 
                 [email, name, Data.hash(email), 'google', 'student', generateUniqueID(), TokenUtils.generateToken(), email]);
 
-            const response = await fetch('http://localhost:3000/get_user_token_and_finalize_register?email=' + encodeURIComponent(email));
+            const response = await fetch('https://api.lesbians.monster/get_user_token_and_finalize_register?email=' + encodeURIComponent(email));
             const data = await response.json();
             if (data.token) {
-                res.redirect('http://localhost:5173/dash?token=' + encodeURIComponent(data.token));
+                res.redirect('http://jobs.lesbians.monster/dash?token=' + encodeURIComponent(data.token));
             } else {
                 throw new Error('Failed to get user token');
             }

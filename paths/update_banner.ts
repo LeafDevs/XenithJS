@@ -30,7 +30,7 @@ module.exports = {
                 .webp({ quality: 80 })
                 .toFile(filePath);
 
-            await Token.updateBanner(token, `http://localhost:3000/uploads/${fileName}`);
+            await Token.updateBanner(token, `https://api.lesbians.monster/uploads/${fileName}`);
             return res.json({ message: "Updated profile picture.", filePath }, 200);
         } catch (error) {
             console.error("Error saving the image:", error);

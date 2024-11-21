@@ -4,7 +4,8 @@ import { getConnection } from './utils/SQL';
 import * as TokenUtils from './utils/Token';
 import * as Xenith from 'xenith';
 import { Data } from 'xenith';
-
+const AuthCB = require('./authcb'); // Authentication callbacks
+const bcrypt = require('bcrypt'); // Password hashing
 export default {
     path: '/reset-password',
     method: 'POST', 
@@ -25,15 +26,37 @@ export default {
                 return res.json({ code: 404, error: 'User not found' });
             }
 
-            if (Data.hash(data.password) !== user.password) {
+            console.log(bcrypt.hashSync("password", 10));
+            console.log(user.password);
+
+            console.log(await bcrypt.compare(data.password, user.password));
+
+            if (!await bcrypt.compare(data.password, user.password)) {
                 return res.json({ code: 401, error: 'Invalid current password' });
             }
 
-            await connection.run('UPDATE users SET password = ? WHERE email = ?', 
-                [Data.hash(data.newPassword), data.email]
+            // Create new user instance with refreshed uniqueID
+            const refreshedUser = new TokenUtils.User(
+                user.id,
+                user.email,
+                user.type,
+                AuthCB.generateUniqueID(),
+                user.name,
+                user.authed,
+                user.profile_info,
+                user.posting_id
             );
 
-            res.json({ code: 200, message: 'Password updated successfully' });
+            // Update password and token
+            await connection.run('UPDATE users SET password = ?, private_token = ? WHERE email = ?', 
+                [Data.hash(data.newPassword), refreshedUser.asToken(), data.email]
+            );
+
+            res.json({ 
+                code: 200, 
+                message: 'Password updated successfully',
+                token: refreshedUser.asToken()
+            });
 
         } catch (err) {
             console.error(err);
