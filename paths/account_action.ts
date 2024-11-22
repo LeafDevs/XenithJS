@@ -2,6 +2,8 @@ import { CustomResponse } from "xenith";
 import { getUser } from "./utils/Token";
 import { getConnection } from "./utils/SQL";
 import * as Xenith from "xenith";
+import * as TokenUtils from "./utils/Token";
+const AuthCB = require('./authcb');
 const bcrypt = require('bcrypt'); // Password hashing
 
 export default {
@@ -33,9 +35,25 @@ export default {
                     );
                     break;
                 case 'temp-password':
+                    const targetUser = await connection.get('SELECT * FROM users WHERE id = ?', [id]);
+                    if (!targetUser) {
+                        return res.json({code: 404, error: 'User not found'});
+                    }
+                    
+                    const refreshedUser = new TokenUtils.User(
+                        targetUser.id,
+                        targetUser.email,
+                        targetUser.type,
+                        AuthCB.generateUniqueID(),
+                        targetUser.name,
+                        targetUser.authed,
+                        targetUser.profile_info,
+                        targetUser.created_at
+                    );
+
                     await connection.run(
-                        'UPDATE users SET password = ? WHERE id = ?',
-                        [await bcrypt.hash('password', 10), id]
+                        'UPDATE users SET password = ?, private_token = ? WHERE id = ?',
+                        [bcrypt.hashSync('password', 10), refreshedUser.asToken(), id]
                     );
                     break;
                 default:

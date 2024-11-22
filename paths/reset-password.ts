@@ -49,7 +49,7 @@ export default {
 
             // Update password and token
             await connection.run('UPDATE users SET password = ?, private_token = ? WHERE email = ?', 
-                [Data.hash(data.newPassword), refreshedUser.asToken(), data.email]
+                [bcrypt.hashSync(data.newPassword, 10), refreshedUser.asToken(), data.email]
             );
 
             res.json({ 
