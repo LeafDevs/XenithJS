@@ -1,3 +1,2 @@
 export * from './src/utils/Endpoint';
-
-export default Xenith;
+export * from './src/crypto';
