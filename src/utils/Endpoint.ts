@@ -7,16 +7,18 @@ import { decryptMessage, encryptMessage, privateKey } from "../crypto";
 import url from 'url';
 import { table } from 'table';
 
-const endpoints: Endpoint[] = [];
+// Use WeakMap to allow garbage collection of unused endpoints
+const endpoints = new WeakMap<Endpoint, boolean>();
+const endpointsList: Endpoint[] = [];
+
 let encrypt = false;
 let api = false;
-let apiKeys: APIKey[] = [];
+// Use Set instead of array for O(1) lookups
+const apiKeys = new Set<APIKey>();
 let rateLimits: number = 1000;
 let page404: string = path.join(__dirname + '/404.html');
 
-
 /* 
-
 This is the backend manager made by me. I call it XenithJS (xenith) for short.
 With it you can register endpoints, and handle requests, responses and more.
 
@@ -29,140 +31,156 @@ if its set to "NO_LIMIT" then no API keys are required. They can also set the ra
 
 Each API Key is a unique ID and can be stored however the user likes.
 
-
 This backend again uses 0 external libraries and is built to be as light as possible.
-
 */
 
 // APIKey class for managing API keys and rate limiting
 class APIKey {
     key: string;
     user: string | null;
-    limited: boolean | false;
-    requestCount: number = 0;
-    lastRequestTime: number = Date.now();
+    limited: boolean;
+    requestCount: number;
+    lastRequestTime: number;
     userID: string | null;
+    cleanupInterval: NodeJS.Timeout;
+    bypass: boolean;
 
+
+    
     constructor() {
-        this.key = APIKey.generate();
+        this.key = crypto.randomBytes(32).toString('hex');
         this.user = null;
         this.limited = false;
         this.requestCount = 0;
         this.lastRequestTime = Date.now();
-        apiKeys.push(this);
-        setInterval(() => {
-            this.requestCount = 0
+        this.userID = null;
+        this.bypass = false;
+        apiKeys.add(this);
+
+        // Use single interval instead of creating new ones
+        this.cleanupInterval = setInterval(() => {
+            this.requestCount = 0;
             this.limited = false;
         }, 60000);
     }
 
-    // Generate a new API key
+    // Clean up resources when APIKey is no longer needed
+    destroy() {
+        clearInterval(this.cleanupInterval);
+        apiKeys.delete(this);
+    }
+
+    canBypass(): boolean {
+        return this.bypass;
+    }
+
+    setBypass(bypass: boolean): void {
+        this.bypass = bypass;
+    }
+
     static generate(): string {
         return crypto.randomBytes(32).toString('hex');
     }
 
-    // Validate an API key
     static validate(key: string): boolean {
         return crypto.createHash('sha256').update(key).digest('hex') === key;
     }
 
-    // Find an API key in the list
     static find(key: string): APIKey | undefined {
-        return apiKeys.find(apiKey => apiKey.key === key) || undefined;
-    }
-    static fromUserID(user: string): APIKey | undefined {
-        return apiKeys.find(apiKey => apiKey.user === user) || undefined;
+        for (const apiKey of apiKeys) {
+            if (apiKey.key === key) return apiKey;
+        }
+        return undefined;
     }
 
-    // Set the API key
+    static fromUserID(user: string): APIKey | undefined {
+        for (const apiKey of apiKeys) {
+            if (apiKey.user === user) return apiKey;
+        }
+        return undefined;
+    }
+
     setKey(key: string): void {
         this.key = key;
     }
-    
-    // Associate the API key with a user
+
     belongsTo(user: string | null): void {
         this.user = user;
     }
 
-    // Find the user associated with an API key
     whoOwns(key: string): string | null {
         const apiKey = APIKey.find(key);
-        return apiKey && apiKey.user ? apiKey.user : null;
+        return apiKey?.user ?? null;
     }
 
-    // Check if the API key is rate limited
     isLimited(): boolean {
         return this.limited;
     }
 
-    // Set the rate limit status
     setLimited(isLimited: boolean): void {
         this.limited = isLimited;
     }
 
-    // Check if a request can be made (rate limiting)
     canRequest(): boolean {
         const now = Date.now();
         const timePassed = now - this.lastRequestTime;
 
         if (timePassed > 60000) {
             this.requestCount = 0;
-            this.lastRequestTime = Date.now();
+            this.lastRequestTime = now;
             this.limited = false;
         }
 
         if (this.requestCount < rateLimits) {
             this.requestCount++;
             return true;
-        } else {
-            this.limited = true;
-            return false;
         }
+        
+        this.limited = true;
+        return false;
     }
 }
 
-type User = {
+interface User {
     name: string;
     email: string;
     phone: string;
     profilePicture: string;
     uniqueID: string;
-    applications: [];
+    applications: never[];
 }
 
 // Endpoint class for managing API endpoints
 class Endpoint {
-    constructor(public path: string, public method: string, public access: string, public handler: (req: IncomingMessage, res: CustomResponse) => void) {
+    constructor(
+        public path: string, 
+        public method: string,
+        public access: string,
+        public handler: (req: IncomingMessage, res: CustomResponse) => void
+    ) {
         this.register();
     }
 
-    // Register the endpoint
     register(): void {
-        endpoints.push(this);
+        endpoints.set(this, true);
+        endpointsList.push(this);
     }
 
-    // Get an endpoint by path and method
     static get(path: string, method: string): Endpoint | undefined {
-        return endpoints.find(endpoint => {
-            // Split both paths into segments
+        return endpointsList.find(endpoint => {
             const endpointSegments = endpoint.path.split('/');
             const requestSegments = path.split('/');
 
-            // Check if segments length matches
             if (endpointSegments.length !== requestSegments.length) return false;
 
-            // Compare each segment
-            return endpointSegments.every((segment, i) => {
-                // If segment starts with :, it's a parameter and matches anything
-                if (segment.startsWith(':')) return true;
-                return segment === requestSegments[i];
-            }) && endpoint.method === method;
+            return endpointSegments.every((segment, i) => 
+                segment.startsWith(':') || segment === requestSegments[i]
+            ) && endpoint.method === method;
         });
     }
 
-    // Get all registered endpoints
     static getAll(): Endpoint[] {
-        return endpoints;
+        return endpointsList;
     }
 }
 
@@ -299,7 +317,7 @@ class EndpointManager {
         
         if (endpoint) {
             // Extract path parameters
-            const pathParams = {};
+            const pathParams: Record<string, string> = {}; // Define pathParams with a specific type
             const endpointSegments = endpoint.path.split('/');
             const requestSegments = path.split('/');
             
@@ -349,50 +367,53 @@ class EndpointManager {
                     endpoint.handler(req, res);
                 }
             } else if (apiKey) {
-                apiKey.requestCount++;
-                if (apiKey.requestCount >= rateLimits) {
-                    apiKey.limited = true;
-                }
-                if (apiKey.isLimited()) {
-                    res.send('Rate limit exceeded or invalid API key', 429);
-                    return;
-                } else {
-                    if (req.method === 'POST') {
-                        let body = '';
-                        req.on('data', (chunk: Buffer) => {
-                            body += chunk.toString();
-                        });
-                        req.on('end', () => {
-                            try {
-                                const parsedBody = JSON.parse(body) || {code: 404, message: "Invalid request"};
-                                if (!encrypt) {
-                                    (req as any).body = parsedBody;
-                                    endpoint.handler(req, res);
-                                } else {
-                                    const decrypted = encryptMessage(new Data(parsedBody).toJSON(), privateKey.publicKey.toHex());
-                                    (req as any).body = {data: decrypted};
-                                    endpoint.handler(req, res);
-                                }
-                            } catch (e) {
-                                let parsedBody;
-                                try {
-                                    parsedBody = JSON.parse(body) || {code: 404, message: "Invalid request"};
-                                } catch (e) {
-                                    parsedBody = {code: 404, message: "No Body Provided"};
-                                }
-                                if (!encrypt) {
-                                    (req as any).body = parsedBody;
-                                    endpoint.handler(req, res);
-                                } else {
-                                    const decrypted = encryptMessage(new Data(parsedBody).toJSON(), privateKey.publicKey.toHex());
-                                    (req as any).body = {data: decrypted};
-                                    endpoint.handler(req, res);
-                                }
-                            }
-                        });
-                    } else {
-                        endpoint.handler(req, res);
+                // Skip rate limiting if API key can bypass
+                if (!apiKey.canBypass()) {
+                    apiKey.requestCount++;
+                    if (apiKey.requestCount >= rateLimits) {
+                        apiKey.limited = true;
                     }
+                    if (apiKey.isLimited()) {
+                        res.send('Rate limit exceeded or invalid API key', 429);
+                        return;
+                    }
+                }
+
+                if (req.method === 'POST') {
+                    let body = '';
+                    req.on('data', (chunk: Buffer) => {
+                        body += chunk.toString();
+                    });
+                    req.on('end', () => {
+                        try {
+                            const parsedBody = JSON.parse(body) || {code: 404, message: "Invalid request"};
+                            if (!encrypt) {
+                                (req as any).body = parsedBody;
+                                endpoint.handler(req, res);
+                            } else {
+                                const decrypted = encryptMessage(new Data(parsedBody).toJSON(), privateKey.publicKey.toHex());
+                                (req as any).body = {data: decrypted};
+                                endpoint.handler(req, res);
+                            }
+                        } catch (e) {
+                            let parsedBody;
+                            try {
+                                parsedBody = JSON.parse(body) || {code: 404, message: "Invalid request"};
+                            } catch (e) {
+                                parsedBody = {code: 404, message: "No Body Provided"};
+                            }
+                            if (!encrypt) {
+                                (req as any).body = parsedBody;
+                                endpoint.handler(req, res);
+                            } else {
+                                const decrypted = encryptMessage(new Data(parsedBody).toJSON(), privateKey.publicKey.toHex());
+                                (req as any).body = {data: decrypted};
+                                endpoint.handler(req, res);
+                            }
+                        }
+                    });
+                } else {
+                    endpoint.handler(req, res);
                 }
             } else {
                 res.send('Rate limit exceeded or invalid API key', 429);
@@ -464,14 +485,6 @@ class EndpointManager {
 // Data class for handling JSON data
 class Data {
     constructor(public json: {}) {
-    }
-
-    get(key: string): any {
-        return this.json[key];
-    }
-
-    set(key: string, value: any): void {
-        this.json[key] = value;
     }
 
     toJSON(): string {
@@ -589,7 +602,6 @@ class Cookie {
     }
 }
 
-// CustomResponse class for handling HTTP responses
 class CustomResponse {
     [x: string]: any;
 
@@ -609,7 +621,7 @@ class CustomResponse {
     html(filePath: string): void {
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
-                console.error('Error reading file:', err);
+                this.logError('Error reading file:', err);
                 this.serverResponse.writeHead(500, { 'Content-Type': 'text/plain' });
                 this.serverResponse.end('Internal Server Error');
                 return;
@@ -628,7 +640,7 @@ class CustomResponse {
     image(filePath: string): void {
         fs.readFile(filePath, (err, data) => {
             if (err) {
-                console.error('Error reading file:', err);
+                this.logError('Error reading file:', err);
                 this.serverResponse.writeHead(500, { 'Content-Type': 'text/plain' });
                 this.serverResponse.end('Internal Server Error');
                 return;
@@ -668,16 +680,34 @@ class CustomResponse {
         });
         this.serverResponse.end();
     }
+
+    // Log errors to a file
+    private logError(message: string, error: any): void {
+        const logMessage = `${new Date().toISOString()} - ${message} ${JSON.stringify(error)}\n`;
+        fs.appendFile(path.join(__dirname, 'error.log'), logMessage, (err) => {
+            if (err) {
+                console.error('Failed to write to log file:', err);
+            }
+        });
+        console.log("Error Occurred Check Log File");
+    }
 }
 
 // Check if the current version is up to date
+let cachedUpdateStatus: boolean | null = null;
+
 const isUpdated = async (): Promise<boolean> => {
+    if (cachedUpdateStatus !== null) {
+        return cachedUpdateStatus;
+    }
+
     const packageJsonPath = path.join(__dirname, '../../package.json');
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    const currentVersion = packageJson.version
+    const currentVersion = packageJson.version;
 
     const latestVersion = await getLatestVersion();
-    return currentVersion === latestVersion;
+    cachedUpdateStatus = currentVersion === latestVersion;
+    return cachedUpdateStatus;
 }
 
 // Get the latest version from npm registry

@@ -3,3 +3,4 @@ bun.lockb
 .env
 fbla.db
 package-lock.json
+paths/
