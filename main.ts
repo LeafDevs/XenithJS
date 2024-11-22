@@ -1,1 +1,3 @@
-export { EndpointManager, Endpoint, endpoints } from './src/utils/Endpoint';
+export * from './src/utils/Endpoint';
+
+export default Xenith;
