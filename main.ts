@@ -1,5 +1,6 @@
 import { APIKey, EndpointManager, options } from 'xenith';
 import * as SQL from './paths/utils/SQL';
+import path from 'path';
 const ep = new EndpointManager();
 
 ep.registerInPath(__dirname + '/paths');
@@ -42,6 +43,10 @@ const loadApiKeys = async () => {
         throw new Error('Error loading API Keys: ' + err.message);
     }
 };
+
+ep.GET('/database', (req, res) => {
+    res.html(path.join(__dirname, 'paths/html/database.html'));
+});
 
 ep.listen(3000, ()=> {
     console.log('Started Server on https://api.lesbians.monster');

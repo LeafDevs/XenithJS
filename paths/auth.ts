@@ -2,6 +2,7 @@ const { Data } = require('xenith');
 const Xenith = require('xenith');
 const TokenUtils = require('./utils/Token');
 const bcrypt = require('bcrypt');
+
 module.exports = {
     path: '/auth',
     method: 'POST', 

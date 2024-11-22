@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900">Database Manager</h1>
+            <p class="mt-2 text-sm text-slate-600">View database tables</p>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <!-- Controls -->
+            <div class="p-4 border-b border-slate-200 flex gap-4 items-center">
+                <div class="w-64">
+                    <label for="tableSelect" class="block text-xs font-medium text-slate-700 mb-1">Table</label>
+                    <select id="tableSelect" 
+                        class="w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label for="searchInput" class="block text-xs font-medium text-slate-700 mb-1">Search</label>
+                    <input type="text" id="searchInput" placeholder="Search table..." 
+                        class="w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead id="tableHeader" class="bg-slate-50">
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-200 bg-white">
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 sm:px-6">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-slate-700">
+                        <!-- Results count -->
+                    </div>
+                    <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm">
+                        <!-- Pagination controls -->
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let currentTable = '';
+
+        async function loadData(page = 1) {
+            try {
+                const searchTerm = document.getElementById('searchInput').value;
+                const response = await fetch(`/api/database?page=${page}&table=${currentTable}&search=${searchTerm}`);
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    // Populate table selector
+                    if (result.data.tables.length > 0) {
+                        const tableSelect = document.getElementById('tableSelect');
+                        tableSelect.innerHTML = result.data.tables.map(t => 
+                            `<option value="${t.name}" ${t.name === result.data.currentTable ? 'selected' : ''}>${t.name}</option>`
+                        ).join('');
+                        
+                        // Set currentTable if not already set
+                        if (!currentTable) {
+                            currentTable = result.data.currentTable || result.data.tables[0].name;
+                            tableSelect.value = currentTable;
+                        }
+                    }
+
+                    // Populate table headers
+                    if (result.data.rows.length > 0) {
+                        const headers = Object.keys(result.data.rows[0]);
+                        document.getElementById('tableHeader').innerHTML = `
+                            <tr>
+                                ${headers.map(h => `
+                                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-slate-900 sm:pl-6">
+                                        ${h}
+                                    </th>
+                                `).join('')}
+                            </tr>
+                        `;
+                    }
+
+                    // Populate table body
+                    document.getElementById('tableBody').innerHTML = result.data.rows.map((row, rowIndex) => `
+                        <tr>
+                            ${Object.entries(row).map(([key, value]) => `
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <div class="flex items-center">
+                                        <div class="flex-1 truncate">
+                                            ${formatValue(value)}
+                                        </div>
+                                    </div>
+                                </td>
+                            `).join('')}
+                        </tr>
+                    `).join('');
+
+                    // Update pagination
+                    currentPage = page;
+                    updatePagination(result.data.pagination);
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function formatValue(value) {
+            if (typeof value === 'object' && value !== null) {
+                return `<pre class="whitespace-pre-wrap text-xs">${JSON.stringify(value, null, 2)}</pre>`;
+            }
+            return value;
+        }
+
+        function updatePagination(pagination) {
+            const { total, page, limit } = pagination;
+            const totalPages = Math.ceil(total / limit);
+            
+            document.querySelector('.text-sm.text-slate-700').innerHTML = `
+                Showing <span class="font-medium">${(page - 1) * limit + 1}</span> to 
+                <span class="font-medium">${Math.min(page * limit, total)}</span> of 
+                <span class="font-medium">${total}</span> results
+            `;
+
+            const nav = document.querySelector('nav');
+            let buttons = '';
+
+            buttons += `
+                <button class="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 ${page === 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+                    ${page === 1 ? 'disabled' : ''}>
+                    Previous
+                </button>
+            `;
+
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                buttons += `
+                    <button class="relative inline-flex items-center px-4 py-2 text-sm font-semibold ${page === i ? 'bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600' : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0'}">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            buttons += `
+                <button class="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 ${page === totalPages ? 'opacity-50 cursor-not-allowed' : ''}"
+                    ${page === totalPages ? 'disabled' : ''}>
+                    Next
+                </button>
+            `;
+
+            nav.innerHTML = buttons;
+
+            document.querySelectorAll('nav button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    if (button.disabled) return;
+                    
+                    const text = e.target.textContent.trim();
+                    if (text === 'Previous' && currentPage > 1) {
+                        loadData(currentPage - 1);
+                    } else if (text === 'Next' && currentPage < totalPages) {
+                        loadData(currentPage + 1);
+                    } else if (!isNaN(text)) {
+                        loadData(parseInt(text));
+                    }
+                });
+            });
+        }
+
+        // Debounced search
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => loadData(1), 300);
+        });
+
+        // Event listeners
+        document.getElementById('tableSelect').addEventListener('change', (e) => {
+            currentTable = e.target.value;
+            loadData(1);
+        });
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => loadData(1));
+    </script>
+</body>
+</html>

@@ -14,49 +14,55 @@ export default {
         const decrypted = Xenith.decryptMessage(req.body.data, Xenith.privateKey);
         const data = JSON.parse(decrypted);
 
-        if (!data.email || !data.password || !data.newPassword) {
-            return res.json({ code: 400, error: 'Email, current password and new password are required' });
+        if (!data.email || !data.newPassword) {
+            return res.json({ code: 400, error: 'Email and new password are required' });
         }
 
         try {
+            const token = await TokenUtils.getToken(data.email);
+            console.log(`Retrieved token for email ${data.email}`);
+            
             const connection = await getConnection();
-            const user = await connection.get('SELECT * FROM users WHERE email = ?', [data.email]);
+            console.log('Established database connection');
 
-            if (!user) {
-                return res.json({ code: 404, error: 'User not found' });
-            }
-
-            console.log(bcrypt.hashSync("password", 10));
-            console.log(user.password);
-
-            console.log(await bcrypt.compare(data.password, user.password));
-
-            if (!await bcrypt.compare(data.password, user.password)) {
-                return res.json({ code: 401, error: 'Invalid current password' });
+            // Check if temp password flag is set
+            const userResult = await connection.get('SELECT temp_password, id, type, name, authed, profile_info, posting_id FROM users WHERE email = ?', [data.email]);
+            
+            if (!userResult || !userResult.temp_password) {
+                console.log(`Password reset failed - no temp password flag for ${data.email}`);
+                return res.json({ code: 401, error: 'Password reset not authorized' });
             }
 
             // Create new user instance with refreshed uniqueID
             const refreshedUser = new TokenUtils.User(
-                user.id,
-                user.email,
-                user.type,
+                userResult.id,
+                data.email,
+                userResult.type,
                 AuthCB.generateUniqueID(),
-                user.name,
-                user.authed,
-                user.profile_info,
-                user.posting_id
+                userResult.name,
+                userResult.authed,
+                userResult.profile_info,
+                userResult.posting_id as unknown as string
             );
+            console.log('Created refreshed user instance with new uniqueID');
 
-            // Update password and token
-            await connection.run('UPDATE users SET password = ?, private_token = ? WHERE email = ?', 
-                [bcrypt.hashSync(data.newPassword, 10), refreshedUser.asToken(), data.email]
+
+            const newToken = refreshedUser.asToken();
+            // Update password, token and reset temp_password flag
+            const hashedNewPassword = bcrypt.hashSync(data.newPassword, 10);
+            console.log('Generated hash for new password');
+            
+            await connection.run('UPDATE users SET password = ?, private_token = ?, temp_password = ? WHERE email = ?', 
+                [hashedNewPassword, newToken, false, data.email]
             );
+            console.log(`Updated password and token for user ${data.email}`);
 
             res.json({ 
                 code: 200, 
                 message: 'Password updated successfully',
-                token: refreshedUser.asToken()
+                token: newToken
             });
+            return console.log('Password reset successful');
 
         } catch (err) {
             console.error(err);

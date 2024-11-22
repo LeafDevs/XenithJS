@@ -5,7 +5,7 @@ import * as Xenith from "xenith";
 import * as TokenUtils from "./utils/Token";
 const AuthCB = require('./authcb');
 const bcrypt = require('bcrypt'); // Password hashing
-
+import { sendVerificationEmail } from './utils/Emailer';
 export default {
     path: '/admin/accounts/:id/:action',
     method: 'POST',
@@ -22,6 +22,9 @@ export default {
             const connection = await getConnection();
 
             switch (action) {
+                case 'verify-email':
+                    await sendVerificationEmail(id, user.email);
+                    break;
                 case 'employer':
                     await connection.run(
                         'UPDATE users SET type = ? WHERE id = ?',
@@ -51,10 +54,20 @@ export default {
                         targetUser.created_at
                     );
 
-                    await connection.run(
-                        'UPDATE users SET password = ?, private_token = ? WHERE id = ?',
-                        [bcrypt.hashSync('password', 10), refreshedUser.asToken(), id]
-                    );
+                    // First try to update assuming temp_password column exists
+                    try {
+                        await connection.run(
+                            'UPDATE users SET password = ?, private_token = ?, temp_password = ? WHERE id = ?',
+                            [bcrypt.hashSync("password", 10), refreshedUser.asToken(), true, id]
+                        );
+                    } catch (err) {
+                        // If column doesn't exist, add it and retry the update
+                        await connection.run('ALTER TABLE users ADD COLUMN temp_password BOOLEAN DEFAULT FALSE');
+                        await connection.run(
+                            'UPDATE users SET password = ?, private_token = ?, temp_password = ? WHERE id = ?',
+                            [bcrypt.hashSync("password", 10), refreshedUser.asToken(), true, id]
+                        );
+                    }
                     break;
                 default:
                     return res.json({code: 400, error: 'Invalid action' });
