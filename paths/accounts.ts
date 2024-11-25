@@ -1,6 +1,6 @@
 import { CustomResponse, Endpoint } from 'xenith';
-import { getUser } from './utils/Token';
-import { getConnection } from './utils/SQL';
+import { getUser } from '../utils/Token';
+import { getConnection } from '../utils/SQL';
 
 export default {
     path: '/admin/accounts',

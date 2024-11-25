@@ -1,6 +1,6 @@
 const { APIKey } = require('xenith');
-const { getConnection } = require('./utils/SQL'); // Updated to use getConnection directly
-const TokenUtils = require('./utils/Token');
+const { getConnection } = require('../utils/SQL'); // Updated to use getConnection directly
+const TokenUtils = require('../utils/Token');
 
 module.exports = {
     path: '/get_user_token_and_finalize_register', // Fixed spelling of 'finalize'

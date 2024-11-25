@@ -1,7 +1,8 @@
 const { Data } = require('xenith');
 const Xenith = require('xenith');
-const TokenUtils = require('./utils/Token');
+const TokenUtils = require('../utils/Token');
 const bcrypt = require('bcrypt');
+const SQL = require('../utils/SQL');
 
 module.exports = {
     path: '/auth',
@@ -9,7 +10,7 @@ module.exports = {
     access: "NO_LIMIT",
     execute: async (req, res) => {
         const decrypted = Xenith.decryptMessage(req.body.data, Xenith.privateKey);
-        const data = JSON.parse(decrypted); // Assuming the decrypted string is a valid JSON
+        const data = JSON.parse(decrypted);
         if(!data.email || !data.password) {
             return res.json({ code: 400, error: 'Email and password are required' });
         }
@@ -17,10 +18,13 @@ module.exports = {
             const token = await TokenUtils.getToken(data.email);
             const password = await TokenUtils.getPassword(data.email);
             
-            console.log(bcrypt.hashSync("password", 10));
-            console.log(password);
+            const connection = await SQL.getConnection();
+            const user = await connection.get('SELECT verified FROM users WHERE email = ?', [data.email]);
+            const isVerified = user?.verified === 1;
 
-            console.log(await bcrypt.compare(data.password, password));
+            if (!isVerified) {
+                return res.json({ code: 401, error: 'Please verify your email before logging in' });
+            }
 
             if (await bcrypt.compare(data.password, password)) {
                 if(data.password === "password") {

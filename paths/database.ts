@@ -1,4 +1,4 @@
-import * as SQL from './utils/SQL';
+import * as SQL from '../utils/SQL';
 
 export default {
     path: '/api/database',

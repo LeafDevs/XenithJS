@@ -1,6 +1,6 @@
 const Xenith = require("xenith");
-const SQL = require("./utils/SQL");
-const Token = require('./utils/Token');
+const SQL = require("../utils/SQL");
+const Token = require('../utils/Token');
 
 module.exports = {
     path: "/accept_post",

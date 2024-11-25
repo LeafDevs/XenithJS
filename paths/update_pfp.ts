@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const Token = require('./utils/Token');
+const Token = require('../utils/Token');
 const Xenith = require('xenith');
 
 module.exports = {

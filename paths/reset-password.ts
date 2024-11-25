@@ -1,7 +1,7 @@
 import { CustomResponse } from "xenith";
 
-import { getConnection } from './utils/SQL';
-import * as TokenUtils from './utils/Token';
+import { getConnection } from '../utils/SQL';
+import * as TokenUtils from '../utils/Token';
 import * as Xenith from 'xenith';
 import { Data } from 'xenith';
 const AuthCB = require('./authcb'); // Authentication callbacks

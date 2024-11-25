@@ -1,4 +1,4 @@
-const { getConnection } = require('./utils/SQL');
+const { getConnection } = require('../utils/SQL');
 
 module.exports = {
     path: '/applications/job',

@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const Xenith = require('xenith');
-const Token = require('./utils/Token');
+const Token = require('../utils/Token');
 
 module.exports = {
     path: "/update_banner",

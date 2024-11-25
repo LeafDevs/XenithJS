@@ -1,7 +1,7 @@
 // Import required modules
 const Xenith = require("xenith");
-const SQL = require("./utils/SQL");
-const TokenUtils = require("./utils/Token");
+const SQL = require("../utils/SQL");
+const TokenUtils = require("../utils/Token");
 
 module.exports = {
     path: "/create_post",

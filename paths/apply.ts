@@ -1,4 +1,4 @@
-const SQL = require('./utils/SQL')
+const SQL = require('../utils/SQL')
 const Xenith = require('xenith');
 
 module.exports = {

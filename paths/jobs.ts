@@ -1,5 +1,5 @@
 // Import SQL utility for database operations
-const SQL = require('./utils/SQL');
+const SQL = require('../utils/SQL');
 
 module.exports = {
     path: '/jobs', // Endpoint path

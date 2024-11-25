@@ -1,7 +1,7 @@
 const { OAuth2Client } = require('google-auth-library');
 const { Data } = require('xenith');
-const TokenUtils = require('./utils/Token');
-const SQL = require('./utils/SQL');
+const TokenUtils = require('../utils/Token');
+const SQL = require('../utils/SQL');
 
 const CLIENT_ID = process.env.google_client_id;
 const CLIENT_SECRET = process.env.google_client_secret;

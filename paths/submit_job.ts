@@ -1,4 +1,4 @@
-const SQL = require("./utils/SQL");
+const SQL = require("../utils/SQL");
 const Xenith = require("xenith");
 
 // i do not know what this is used for. i think i made it but never used it.

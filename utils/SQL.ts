@@ -24,7 +24,7 @@ const createOrUpdateTables = async () => {
             questions TEXT DEFAULT '[]',
             accepted TEXT DEFAULT 'false',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
+        )
     `);
     
     // Create or update users table
@@ -41,8 +41,10 @@ const createOrUpdateTables = async () => {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             alerts BOOLEAN DEFAULT TRUE,
             profile_visibility BOOLEAN DEFAULT TRUE,
-            profile_info TEXT DEFAULT '{"profile_picture": "https://github.com/leafdevs.png", "bio": "This is a sample bio", "banner": "", "social_links": {}, "portfolio": "", "resume": ""}'
-        );
+            profile_info TEXT DEFAULT '{"profile_picture": "https://github.com/leafdevs.png", "bio": "This is a sample bio", "banner": "", "social_links": {}, "portfolio": "", "resume": ""}',
+            verified BOOLEAN DEFAULT FALSE,
+            following TEXT DEFAULT '[]'
+        )
     `);
     
     // Create or update applications table
@@ -56,7 +58,7 @@ const createOrUpdateTables = async () => {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(private_token),
             FOREIGN KEY (job_id) REFERENCES jobs(id)
-        );
+        )
     `);
     
     // Create or update apikeys table
@@ -66,7 +68,7 @@ const createOrUpdateTables = async () => {
             user_id TEXT NOT NULL UNIQUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(private_token)
-        );
+        )
     `);
     
     // Create or update pending_posts table
@@ -77,7 +79,18 @@ const createOrUpdateTables = async () => {
             message TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(private_token)
-        );
+        )
+    `);
+    
+    // Create verification codes table
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS verification_codes (
+            code TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
     `);
 };
 

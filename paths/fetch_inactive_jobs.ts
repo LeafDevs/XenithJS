@@ -1,5 +1,5 @@
-const TokenUtils = require("./utils/Token");
-const SQL = require("./utils/SQL");
+const TokenUtils = require("../utils/Token");
+const SQL = require("../utils/SQL");
 
 module.exports = {
     path: "/jobs/fetch_inactive",

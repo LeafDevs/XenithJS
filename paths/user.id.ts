@@ -1,5 +1,5 @@
-const SQL = require('./utils/SQL');
-const TokenUtils = require('./utils/Token');
+const SQL = require('../utils/SQL');
+const TokenUtils = require('../utils/Token');
 
 module.exports = {
     path: '/user/:id',
@@ -22,6 +22,7 @@ module.exports = {
 
             res.json({
                 code: 200,
+                id: user.id,
                 name: user.name,
                 type: user.type,
                 email: user.email,

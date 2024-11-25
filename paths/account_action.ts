@@ -1,11 +1,9 @@
 import { CustomResponse } from "xenith";
-import { getUser } from "./utils/Token";
-import { getConnection } from "./utils/SQL";
-import * as Xenith from "xenith";
-import * as TokenUtils from "./utils/Token";
+import { getUser } from "../utils/Token";
+import * as TokenUtils from "../utils/Token";
 const AuthCB = require('./authcb');
 const bcrypt = require('bcrypt'); // Password hashing
-import { sendVerificationEmail } from './utils/Emailer';
+const SQL = require('../utils/SQL');
 export default {
     path: '/admin/accounts/:id/:action',
     method: 'POST',
@@ -19,11 +17,26 @@ export default {
             }
 
             const { id, action } = req.params;
-            const connection = await getConnection();
+            const connection = await SQL.getConnection();
 
             switch (action) {
                 case 'verify-email':
-                    await sendVerificationEmail(id, user.email);
+                    await connection.run(
+                        'UPDATE users SET verified = ? WHERE id = ?',
+                        [true, id]
+                    );
+                    break;
+                case 'delete':
+                    await connection.run(
+                        'DELETE FROM users WHERE id = ?',
+                        [id]
+                    );
+                    break;
+                case 'student':
+                    await connection.run(
+                        'UPDATE users SET type = ? WHERE id = ?',
+                        ['student', id]
+                    );
                     break;
                 case 'employer':
                     await connection.run(
