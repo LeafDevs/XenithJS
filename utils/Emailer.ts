@@ -223,6 +223,44 @@ export class Emailer {
             throw error;
         }
     }
+    async sendTwoFactorCode(email: any, code: string) {
+        const emailConfig: EmailConfig = {
+            to: email,
+            subject: 'Two-factor authentication code',
+            text: `Your two-factor authentication code is: ${code}`,
+            html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Two-Factor Authentication Code</title>
+                </head>
+                <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+                    <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+                        <h1 style="color: #333333; text-align: center; margin-bottom: 30px;">Two-Factor Authentication Code</h1>
+                        <p style="color: #666666; font-size: 16px; line-height: 1.5; text-align: center;">
+                            Your authentication code is:
+                        </p>
+                        <p style="color: #333333; font-size: 24px; font-weight: bold; text-align: center; margin: 20px 0;">
+                            ${code}
+                        </p>
+                        <p style="color: #666666; font-size: 14px; text-align: center; margin-top: 30px;">
+                            This code will expire shortly. Please do not share this code with anyone.
+                        </p>
+                    </div>
+                </body>
+                </html>
+            `
+        };
+
+        try {
+            await this.transporter.sendMail(emailConfig);
+        } catch (error) {
+            console.error('Failed to send two-factor authentication code:', error);
+            throw error;
+        }
+    }
 }
 
 

@@ -1,7 +1,7 @@
-const { OAuth2Client } = require('google-auth-library');
-const { Data } = require('xenith');
-const TokenUtils = require('../utils/Token');
-const SQL = require('../utils/SQL');
+import { OAuth2Client } from 'google-auth-library';
+import { Data } from 'xenith';
+import * as TokenUtils from '../utils/Token';
+import * as SQL from '../utils/SQL';
 
 const CLIENT_ID = process.env.google_client_id;
 const CLIENT_SECRET = process.env.google_client_secret;
@@ -10,7 +10,7 @@ const REDIRECT_URI = 'https://api.lesbians.monster/auth/google/callback';
 
 const oAuth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
-module.exports = {
+export default {
     path: '/auth/google/callback',
     method: 'GET',
     access: "NO_LIMIT",
@@ -24,7 +24,7 @@ module.exports = {
                 url: 'https://www.googleapis.com/oauth2/v1/userinfo'
             });
 
-            const { email, name } = userInfo.data;
+            const { email, name } = userInfo.data as { email: string, name: string };
 
             const connection = await SQL.getConnection();
             await connection.run('INSERT INTO users (email, name, password, authed, type, uniqueID, private_token) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(email) DO UPDATE SET email = ?', 
@@ -47,6 +47,7 @@ module.exports = {
     }
 };
 
-function generateUniqueID() {
+export function generateUniqueID(): string {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
+

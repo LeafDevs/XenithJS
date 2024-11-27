@@ -13,6 +13,9 @@ module.exports = {
 
         try {
             const user = await TokenUtils.getUser(token);
+            if (!user) {
+                return res.json({ code: 401, error: 'No user found' });
+            }
             res.json({
                 code: 200,
                 id: user.id,

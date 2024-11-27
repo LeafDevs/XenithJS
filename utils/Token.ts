@@ -88,11 +88,11 @@ const generateToken = (): string => {
     return crypto.randomBytes(32).toString('base64');
 }
 
-const getUser = async (email: string): Promise<User> => {
+const getUser = async (email: string): Promise<User | null> => {
     const connection = await getConnection();
     const users = await connection.all('SELECT * FROM users WHERE private_token = ?', [email]);
-    if (users.length === 0) {
-        throw new Error('User not found');
+    if (users.length === 0 || !users[0]) {
+        return null;
     }
     const user = users[0];
     return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.following || [], user.private_token, user.profile_info, user.posting_id || null);
