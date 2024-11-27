@@ -42,7 +42,8 @@ export default {
                 userResult.name,
                 userResult.authed,
                 userResult.profile_info,
-                userResult.posting_id as unknown as string
+                userResult.posting_id as unknown as string,
+                userResult.following as unknown as string[]
             );
             console.log('Created refreshed user instance with new uniqueID');
 

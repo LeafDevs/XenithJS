@@ -69,6 +69,10 @@ export default {
                 [JSON.stringify(following), token]
             );
 
+            console.log('Following list updated in database', following);
+
+
+
             console.log(`Successfully ${action}ed user ${id}`);
             return res.json({
                 code: 200,

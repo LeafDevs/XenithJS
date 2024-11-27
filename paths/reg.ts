@@ -36,8 +36,10 @@ export default {
                     data.name,
                     'email', // Authentication method
                     null as unknown as string, // No additional data
-                    null as unknown as string // No additional data
+                    null as unknown as string, // No additional data
+                    null as unknown as string[] // No additional data
                 );
+
 
                 const userToken = user.asToken();
 

@@ -28,6 +28,7 @@ module.exports = {
                 email: user.email,
                 profile_info: JSON.parse(user.profile_info),
                 created_at: user.created_at
+                
             });
         } catch (err) {
             console.error(err);

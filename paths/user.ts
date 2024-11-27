@@ -21,8 +21,10 @@ module.exports = {
                 email: user.email,
                 uniqueID: user.uniqueID,
                 profile_info: JSON.parse(user.profile_info),
-                posting_id: user.posting_id
+                posting_id: user.posting_id,
+                following: user.following
             });
+            console.log(user.following);
         } catch (err) {
             console.error(err);
             res.json({ code: 500, error: 'Internal Server Error' });

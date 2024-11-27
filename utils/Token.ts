@@ -15,6 +15,7 @@ class User {
                 public authed: string,
                 public settings: any,
                 public created_at: string,
+                public following: string[],
                 public token?: string,
                 public profile_info?: any,
                 public posting_id?: number) {}
@@ -70,6 +71,10 @@ class User {
     setPostingID(id: number) {
         this.posting_id = id;
     }
+
+    getFollowing(): string[] {
+        return this.following;
+    }
 }
 
 const isUserValid = async (email: string): Promise<boolean> => {
@@ -90,7 +95,7 @@ const getUser = async (email: string): Promise<User> => {
         throw new Error('User not found');
     }
     const user = users[0];
-    return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.private_token, user.profile_info, user.posting_id || null);
+    return new User(user.id, user.email, user.type, user.uniqueID, user.name, user.authed, user.profile_info || null, user.createdAt, user.following || [], user.private_token, user.profile_info, user.posting_id || null);
 }
 
 const getToken = async (email: string): Promise<string> => {

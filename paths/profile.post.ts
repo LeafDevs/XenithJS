@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getUser } from '../utils/Token';
 import fs from 'fs';
 import path from 'path';
+import Emailer from '../utils/Emailer';
 
 interface Post {
     id: string;
@@ -40,11 +41,17 @@ export default {
             const user = await getUser(token);
             const connection = await SQL.getConnection();
 
+            if (!user.isEmployer()) {
+                return res.json({ code: 403, error: 'Only employers can create posts' });
+            }
+
+
             // Get current posts
             const userRow = await connection.get(
                 'SELECT posts FROM users WHERE private_token = ?',
                 [token]
             );
+
 
             let postsData: PostsData = { posts: [] };
             if (userRow?.posts) {
@@ -105,6 +112,14 @@ export default {
                 shares: 0,
                 images
             };
+
+
+            // Send notification email to followers
+            try {
+                await Emailer.sendPostNotification(newPost, user);
+            } catch (error) {
+                console.error('Error sending notification email:', error);
+            }
 
             // Add to beginning of posts array
             postsData.posts.unshift(newPost);
