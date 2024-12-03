@@ -1,4 +1,3 @@
-
 import * as SQL from '../utils/SQL';
 import * as Xenith from 'xenith';
 import { getPassword, getUser } from '../utils/Token';
@@ -20,8 +19,11 @@ export default {
             const decrypted = Xenith.decryptMessage(req.body.data, Xenith.privateKey);
             const data = JSON.parse(decrypted);
 
-            if (!data.setting || (!data.value && data.setting !== 'password') || (data.setting === 'password' && !data.newPassword)) {
-                return res.json({ code: 400, error: 'Required fields are missing' });
+
+            if (data.setting !== 'two_factor_auth') {
+                if (!data.setting || (data.value === undefined && data.setting !== 'password') || (data.setting === 'password' && !data.newPassword)) {
+                    return res.json({ code: 400, error: 'Required fields are missing' });
+                }
             }
 
             const user = await getUser(token);
@@ -37,6 +39,9 @@ export default {
             // Update the specified setting
             switch (data.setting) {
                 case "twofa":
+                    profileInfo.two_factor_auth = data.value;
+                    break;
+                case "two_factor_auth":
                     profileInfo.two_factor_auth = data.value;
                     break;
                 case "password":

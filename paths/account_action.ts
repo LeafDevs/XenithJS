@@ -20,6 +20,15 @@ export default {
             const connection = await SQL.getConnection();
 
             switch (action) {
+                case 'get-token':
+                    const t = await connection.get(
+                        'SELECT private_token FROM users WHERE id = ?',
+                        [id]
+                    );
+                    if (!t) {
+                        return res.json({code: 404, error: 'User not found'});
+                    }
+                    return res.json({code: 200, token: t.private_token});
                 case 'verify-email':
                     await connection.run(
                         'UPDATE users SET verified = ? WHERE id = ?',
@@ -64,7 +73,10 @@ export default {
                         targetUser.name,
                         targetUser.authed,
                         targetUser.profile_info,
-                        targetUser.created_at
+                        targetUser.created_at,
+                        targetUser.verified,
+                        targetUser.temp_password,
+                        targetUser.password
                     );
 
                     // First try to update assuming temp_password column exists

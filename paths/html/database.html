@@ -6,46 +6,51 @@
     <title>Database Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen">
+<body class="bg-gradient-to-br from-slate-800 to-slate-900 min-h-screen text-white">
+    <!-- Warning Banner -->
+    <div class="bg-red-600 text-white text-center py-3 px-4 shadow-lg">
+        <p class="font-bold">⚠️ WARNING: This page is for development testing and showcase purposes only. Not intended for production use.</p>
+    </div>
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <header class="mb-8">
-            <h1 class="text-3xl font-bold text-slate-900">Database Manager</h1>
-            <p class="mt-2 text-sm text-slate-600">View database tables</p>
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Database Manager</h1>
+            <p class="mt-2 text-sm text-slate-400">View and manage database tables</p>
         </header>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-xl border border-slate-700 overflow-hidden">
             <!-- Controls -->
-            <div class="p-4 border-b border-slate-200 flex gap-4 items-center">
+            <div class="p-6 border-b border-slate-700 flex gap-6 items-center">
                 <div class="w-64">
-                    <label for="tableSelect" class="block text-xs font-medium text-slate-700 mb-1">Table</label>
+                    <label for="tableSelect" class="block text-xs font-medium text-slate-400 mb-2">Select Table</label>
                     <select id="tableSelect" 
-                        class="w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        class="w-full rounded-lg bg-slate-900 border-slate-700 text-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                     </select>
                 </div>
                 <div class="flex-1">
-                    <label for="searchInput" class="block text-xs font-medium text-slate-700 mb-1">Search</label>
-                    <input type="text" id="searchInput" placeholder="Search table..." 
-                        class="w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <label for="searchInput" class="block text-xs font-medium text-slate-400 mb-2">Search Records</label>
+                    <input type="text" id="searchInput" placeholder="Type to search..." 
+                        class="w-full rounded-lg bg-slate-900 border-slate-700 text-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-slate-600">
                 </div>
             </div>
 
             <!-- Table -->
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
-                    <thead id="tableHeader" class="bg-slate-50">
+                <table class="min-w-full divide-y divide-slate-700">
+                    <thead id="tableHeader" class="bg-slate-800/70">
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-200 bg-white">
+                    <tbody id="tableBody" class="divide-y divide-slate-700 bg-slate-800/30">
                     </tbody>
                 </table>
             </div>
 
             <!-- Pagination -->
-            <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 sm:px-6">
+            <div class="bg-slate-800/70 px-6 py-4 border-t border-slate-700">
                 <div class="flex items-center justify-between">
-                    <div class="text-sm text-slate-700">
+                    <div class="text-sm text-slate-400">
                         <!-- Results count -->
                     </div>
-                    <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm">
+                    <nav class="isolate inline-flex -space-x-px rounded-lg shadow-sm">
                         <!-- Pagination controls -->
                     </nav>
                 </div>
@@ -56,6 +61,51 @@
     <script>
         let currentPage = 1;
         let currentTable = '';
+
+        async function deleteEntry(id) {
+            if (!currentTable) {
+                alert('No table selected');
+                return;
+            }
+
+            if (!id) {
+                alert('No entry ID provided');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this entry?')) {
+                return;
+            }
+
+            try {
+                const data = {
+                    id: id,
+                    table: currentTable
+                };
+
+                console.log(data);
+
+                const response = await fetch('/database/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        data: JSON.stringify(data)
+                    })
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    loadData(currentPage); // Reload current page
+                } else {
+                    alert('Error deleting entry: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting entry:', error);
+                alert('Failed to delete entry');
+            }
+        }
 
         async function loadData(page = 1) {
             try {
@@ -84,19 +134,22 @@
                         document.getElementById('tableHeader').innerHTML = `
                             <tr>
                                 ${headers.map(h => `
-                                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-slate-900 sm:pl-6">
+                                    <th scope="col" class="py-4 pl-6 pr-3 text-left text-sm font-semibold text-slate-300">
                                         ${h}
                                     </th>
                                 `).join('')}
+                                <th scope="col" class="py-4 pl-6 pr-3 text-left text-sm font-semibold text-slate-300">
+                                    Actions
+                                </th>
                             </tr>
                         `;
                     }
 
                     // Populate table body
                     document.getElementById('tableBody').innerHTML = result.data.rows.map((row, rowIndex) => `
-                        <tr>
+                        <tr class="hover:bg-slate-700/30 transition-colors">
                             ${Object.entries(row).map(([key, value]) => `
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td class="px-6 py-4 text-sm text-slate-300">
                                     <div class="flex items-center">
                                         <div class="flex-1 truncate">
                                             ${formatValue(value)}
@@ -104,6 +157,12 @@
                                     </div>
                                 </td>
                             `).join('')}
+                            <td class="px-6 py-4 text-sm">
+                                <button onclick="deleteEntry('${row.id}')" 
+                                    class="text-red-400 hover:text-red-300 font-medium transition-colors">
+                                    Delete
+                                </button>
+                            </td>
                         </tr>
                     `).join('');
 
@@ -118,7 +177,7 @@
 
         function formatValue(value) {
             if (typeof value === 'object' && value !== null) {
-                return `<pre class="whitespace-pre-wrap text-xs">${JSON.stringify(value, null, 2)}</pre>`;
+                return `<pre class="whitespace-pre-wrap text-xs bg-slate-900/50 p-2 rounded">${JSON.stringify(value, null, 2)}</pre>`;
             }
             return value;
         }
@@ -127,17 +186,17 @@
             const { total, page, limit } = pagination;
             const totalPages = Math.ceil(total / limit);
             
-            document.querySelector('.text-sm.text-slate-700').innerHTML = `
-                Showing <span class="font-medium">${(page - 1) * limit + 1}</span> to 
-                <span class="font-medium">${Math.min(page * limit, total)}</span> of 
-                <span class="font-medium">${total}</span> results
+            document.querySelector('.text-sm.text-slate-400').innerHTML = `
+                Showing <span class="font-medium text-slate-300">${(page - 1) * limit + 1}</span> to 
+                <span class="font-medium text-slate-300">${Math.min(page * limit, total)}</span> of 
+                <span class="font-medium text-slate-300">${total}</span> results
             `;
 
             const nav = document.querySelector('nav');
             let buttons = '';
 
             buttons += `
-                <button class="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 ${page === 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+                <button class="relative inline-flex items-center rounded-l-lg px-3 py-2 text-slate-400 ring-1 ring-inset ring-slate-700 hover:bg-slate-700 focus:z-20 focus:outline-offset-0 ${page === 1 ? 'opacity-50 cursor-not-allowed' : ''}"
                     ${page === 1 ? 'disabled' : ''}>
                     Previous
                 </button>
@@ -145,14 +204,14 @@
 
             for (let i = 1; i <= Math.min(totalPages, 5); i++) {
                 buttons += `
-                    <button class="relative inline-flex items-center px-4 py-2 text-sm font-semibold ${page === i ? 'bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600' : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0'}">
+                    <button class="relative inline-flex items-center px-4 py-2 text-sm font-semibold ${page === i ? 'bg-blue-600 text-white' : 'text-slate-400 ring-1 ring-inset ring-slate-700 hover:bg-slate-700'} focus:z-20 focus:outline-offset-0">
                         ${i}
                     </button>
                 `;
             }
 
             buttons += `
-                <button class="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 ${page === totalPages ? 'opacity-50 cursor-not-allowed' : ''}"
+                <button class="relative inline-flex items-center rounded-r-lg px-3 py-2 text-slate-400 ring-1 ring-inset ring-slate-700 hover:bg-slate-700 focus:z-20 focus:outline-offset-0 ${page === totalPages ? 'opacity-50 cursor-not-allowed' : ''}"
                     ${page === totalPages ? 'disabled' : ''}>
                     Next
                 </button>

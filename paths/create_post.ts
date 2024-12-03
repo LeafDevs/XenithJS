@@ -3,9 +3,10 @@ const Xenith = require("xenith");
 const SQL = require("../utils/SQL");
 const TokenUtils = require("../utils/Token");
 
-module.exports = {
+export default {
     path: "/create_post",
     method: "POST",
+    access: "LIMIT",
     execute: async (req, res) => {
         try {
             // Validate request body contains data
@@ -49,14 +50,43 @@ module.exports = {
                 // Connect to database and create new job posting
                 const connection = await SQL.getConnection();
                 const sanitizedQuestions = Array.isArray(questions) ? JSON.stringify(questions) : '[]';
-                const post = await connection.run(
+                const sanitizedTags = Array.isArray(tags) ? JSON.stringify(tags) : '[]';
+                const result = await connection.run(
                     "INSERT INTO jobs (title, company, description, payrate, requirements, location, tags, icon, questions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [title, company, description, payrate, requirements, location, tags, icon, sanitizedQuestions]
+                    [title, company, description, payrate, requirements, location, sanitizedTags, icon, sanitizedQuestions]
                 );
+
+                // Get the ID of the newly inserted job
+                const postId = result.lastID;
+
+                // Get user's current posting_ids
+                const userPostings = await connection.get(
+                    "SELECT posting_id FROM users WHERE id = ?",
+                    [userId]
+                );
+
+                // Parse existing posting_ids array or create new one
+                let postingIds: number[] = [];
+                try {
+                    postingIds = userPostings?.posting_id ? JSON.parse(userPostings.posting_id) : [];
+                } catch (e) {
+                    console.error("Error parsing posting_id:", e);
+                    postingIds = [];
+                }
+                // Add new post ID to array
+                
+                postingIds.push(postId);
+
+                // Update user's posting_ids in database
+                await connection.run(
+                    "UPDATE users SET posting_id = ? WHERE id = ?",
+                    [JSON.stringify(postingIds), userId]
+                );
+
                 res.json({ 
                     code: 200, 
                     message: "Post created successfully", 
-                    postId: post.id 
+                    postId: postId 
                 });
             } catch (err) {
                 res.json({ code: 500, error: "Failed to create post", details: err.message });
